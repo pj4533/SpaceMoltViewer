@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct ShipInspectorView: View {
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
 
-    private var shipOverview: ShipOverview? { pollingManager.playerStatus?.ship }
-    private var shipDetail: ShipDetailResponse? { pollingManager.shipDetail }
-    private var ownedShips: OwnedShipsResponse? { pollingManager.ownedShips }
+    private var shipOverview: ShipOverview? { gameStateManager.playerStatus?.ship }
+    private var shipDetail: ShipDetailResponse? { gameStateManager.shipDetail }
+    private var ownedShips: OwnedShipsResponse? { gameStateManager.ownedShips }
 
     var body: some View {
         ScrollView {

@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct NearbyInspectorView: View {
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
 
-    private var nearby: NearbyResponse? { pollingManager.nearby }
+    private var nearby: NearbyResponse? { gameStateManager.nearby }
 
     var body: some View {
         ScrollView {

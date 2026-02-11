@@ -17,7 +17,7 @@ struct ConnectionIndicator: View {
     private var indicatorColor: Color {
         switch state {
         case .connected: return .green
-        case .connecting: return .yellow
+        case .connecting, .reconnecting: return .yellow
         case .disconnected: return .gray
         case .error: return .red
         }

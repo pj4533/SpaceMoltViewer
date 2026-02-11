@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct CargoInspectorView: View {
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
 
-    private var cargo: CargoResponse? { pollingManager.cargo }
+    private var cargo: CargoResponse? { gameStateManager.cargo }
 
     var body: some View {
         ScrollView {

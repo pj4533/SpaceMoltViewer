@@ -2,7 +2,7 @@ import SwiftUI
 
 struct InspectorPanelView: View {
     let focus: InspectorFocus
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
     let mapViewModel: MapViewModel
     var onDismiss: () -> Void
 
@@ -34,21 +34,21 @@ struct InspectorPanelView: View {
             // Content
             switch focus {
             case .none:
-                InspectorEmptyView(pollingManager: pollingManager)
+                InspectorEmptyView(gameStateManager: gameStateManager)
             case .systemDetail(let id):
-                SystemInspectorView(systemId: id, mapViewModel: mapViewModel, pollingManager: pollingManager)
+                SystemInspectorView(systemId: id, mapViewModel: mapViewModel, gameStateManager: gameStateManager)
             case .shipDetail:
-                ShipInspectorView(pollingManager: pollingManager)
+                ShipInspectorView(gameStateManager: gameStateManager)
             case .missionDetail(let id):
-                MissionInspectorView(missionId: id, pollingManager: pollingManager)
+                MissionInspectorView(missionId: id, gameStateManager: gameStateManager)
             case .skillsOverview:
-                SkillsInspectorView(pollingManager: pollingManager)
+                SkillsInspectorView(gameStateManager: gameStateManager)
             case .cargoDetail:
-                CargoInspectorView(pollingManager: pollingManager)
+                CargoInspectorView(gameStateManager: gameStateManager)
             case .nearbyDetail:
-                NearbyInspectorView(pollingManager: pollingManager)
+                NearbyInspectorView(gameStateManager: gameStateManager)
             case .storageDetail:
-                StorageInspectorView(pollingManager: pollingManager)
+                StorageInspectorView(gameStateManager: gameStateManager)
             }
         }
     }

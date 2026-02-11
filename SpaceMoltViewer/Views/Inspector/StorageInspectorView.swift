@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct StorageInspectorView: View {
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
 
-    private var storage: StorageResponse? { pollingManager.storage }
+    private var storage: StorageResponse? { gameStateManager.storage }
 
     var body: some View {
         ScrollView {

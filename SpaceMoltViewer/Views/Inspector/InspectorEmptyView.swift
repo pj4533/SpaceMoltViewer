@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct InspectorEmptyView: View {
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
 
     var body: some View {
-        if let system = pollingManager.system {
+        if let system = gameStateManager.system {
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Current System")

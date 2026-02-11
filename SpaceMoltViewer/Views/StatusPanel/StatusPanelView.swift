@@ -1,57 +1,57 @@
 import SwiftUI
 
 struct StatusPanelView: View {
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
     var onFocusChange: (InspectorFocus) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 8) {
-                    if let player = pollingManager.playerStatus?.player {
+                    if let player = gameStateManager.playerStatus?.player {
                         PlayerIdentityCompact(player: player)
 
                         LocationCompact(
                             player: player,
-                            system: pollingManager.system,
+                            system: gameStateManager.system,
                             onTap: {
                                 onFocusChange(.systemDetail(player.currentSystem))
                             }
                         )
                     }
 
-                    if let ship = pollingManager.playerStatus?.ship {
+                    if let ship = gameStateManager.playerStatus?.ship {
                         ShipVitalsCompact(ship: ship, onTap: {
                             onFocusChange(.shipDetail)
                         })
                     }
 
-                    if let nearby = pollingManager.nearby {
+                    if let nearby = gameStateManager.nearby {
                         NearbyCompact(nearby: nearby, onTap: {
                             onFocusChange(.nearbyDetail)
                         })
                     }
 
-                    if let missions = pollingManager.missions {
+                    if let missions = gameStateManager.missions {
                         MissionsCompact(missions: missions, onTapMission: { id in
                             onFocusChange(.missionDetail(id))
                         })
                     }
 
-                    if let cargo = pollingManager.cargo {
+                    if let cargo = gameStateManager.cargo {
                         CargoCompact(cargo: cargo, onTap: {
                             onFocusChange(.cargoDetail)
                         })
                     }
 
-                    if let storage = pollingManager.storage {
+                    if let storage = gameStateManager.storage {
                         StorageCompact(storage: storage, onTap: {
                             onFocusChange(.storageDetail)
                         })
                     }
 
                     // Skills summary tap target
-                    if let skills = pollingManager.skills {
+                    if let skills = gameStateManager.skills {
                         Button {
                             onFocusChange(.skillsOverview)
                         } label: {
@@ -82,8 +82,8 @@ struct StatusPanelView: View {
             Divider()
 
             ConnectionStatusCompact(
-                connectionState: pollingManager.gameAPI.sessionManager.connectionState,
-                isPolling: pollingManager.isPolling
+                connectionState: gameStateManager.isConnected ? .connected : .disconnected,
+                isLive: gameStateManager.isConnected
             )
         }
     }

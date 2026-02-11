@@ -5,7 +5,7 @@ import Observation
 
 @Observable
 class MapViewModel {
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
     weak var appViewModel: AppViewModel?
 
     var scale: CGFloat = 1.0
@@ -18,16 +18,16 @@ class MapViewModel {
     private let minY: Double = -7600
     private let maxY: Double = 6370
 
-    init(pollingManager: PollingManager, appViewModel: AppViewModel? = nil) {
-        self.pollingManager = pollingManager
+    init(gameStateManager: GameStateManager, appViewModel: AppViewModel? = nil) {
+        self.gameStateManager = gameStateManager
         self.appViewModel = appViewModel
         SMLog.map.debug("MapViewModel initialized")
     }
 
-    var systems: [MapSystem] { pollingManager.publicMap ?? [] }
-    var currentSystem: String? { pollingManager.playerStatus?.player.currentSystem }
+    var systems: [MapSystem] { gameStateManager.publicMap ?? [] }
+    var currentSystem: String? { gameStateManager.playerStatus?.player.currentSystem }
     var discoveredSystems: Set<String> {
-        guard let discovered = pollingManager.playerStatus?.player.discoveredSystems else {
+        guard let discovered = gameStateManager.playerStatus?.player.discoveredSystems else {
             return []
         }
         return Set(discovered.keys)

@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct LogFeedView: View {
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
 
     private var entries: [LogEntry] {
-        pollingManager.captainsLog?.entries ?? []
+        gameStateManager.captainsLog?.entries ?? []
     }
 
     var body: some View {
@@ -15,7 +15,7 @@ struct LogFeedView: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button {
-                    Task { await pollingManager.refreshCaptainsLog() }
+                    Task { await gameStateManager.refreshCaptainsLog() }
                 } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.caption2)

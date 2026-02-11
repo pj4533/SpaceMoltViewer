@@ -3,7 +3,7 @@ import SwiftUI
 struct SystemInspectorView: View {
     let systemId: String
     let mapViewModel: MapViewModel
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
 
     private var mapSystem: MapSystem? {
         mapViewModel.systems.first { $0.id == systemId }
@@ -17,10 +17,10 @@ struct SystemInspectorView: View {
         mapViewModel.discoveredSystems.contains(systemId)
     }
 
-    /// If this is the current system, show detailed system info from polling
+    /// If this is the current system, show detailed system info
     private var currentSystemDetail: SystemResponse? {
         guard isCurrent else { return nil }
-        return pollingManager.system
+        return gameStateManager.system
     }
 
     var body: some View {

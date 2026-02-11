@@ -6,11 +6,11 @@ struct HubView: View {
     var body: some View {
         Group {
             if appViewModel.sessionManager.isConnected,
-               let polling = appViewModel.pollingManager,
+               let gsm = appViewModel.gameStateManager,
                let mapVM = appViewModel.mapViewModel {
                 ConnectedHubView(
                     appViewModel: appViewModel,
-                    pollingManager: polling,
+                    gameStateManager: gsm,
                     mapViewModel: mapVM
                 )
             } else {

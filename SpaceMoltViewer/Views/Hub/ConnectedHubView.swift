@@ -2,17 +2,17 @@ import SwiftUI
 
 struct ConnectedHubView: View {
     @Bindable var appViewModel: AppViewModel
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
     @Bindable var mapViewModel: MapViewModel
 
-    @State private var bottomBarTab: BottomBarTab = .chat
+    @State private var bottomBarTab: BottomBarTab = .events
 
     var body: some View {
         VSplitView {
             HSplitView {
                 // Left Panel: Status Strip
                 StatusPanelView(
-                    pollingManager: pollingManager,
+                    gameStateManager: gameStateManager,
                     onFocusChange: { appViewModel.inspectorFocus = $0 }
                 )
                 .frame(minWidth: 220, idealWidth: 240, maxWidth: 300)
@@ -24,16 +24,16 @@ struct ConnectedHubView: View {
                 // Right Panel: Inspector
                 InspectorPanelView(
                     focus: appViewModel.inspectorFocus,
-                    pollingManager: pollingManager,
+                    gameStateManager: gameStateManager,
                     mapViewModel: mapViewModel,
                     onDismiss: { appViewModel.inspectorFocus = .none }
                 )
                 .frame(minWidth: 250, idealWidth: 280, maxWidth: 350)
             }
 
-            // Bottom Bar: Chat / Log / Alerts
+            // Bottom Bar: Events / Chat / Captain's Log
             ActivityBarView(
-                pollingManager: pollingManager,
+                gameStateManager: gameStateManager,
                 selectedTab: $bottomBarTab
             )
             .frame(minHeight: 100, idealHeight: 150, maxHeight: 300)
@@ -42,16 +42,17 @@ struct ConnectedHubView: View {
             ToolbarItem(placement: .automatic) {
                 HStack(spacing: 8) {
                     ConnectionIndicator(state: appViewModel.sessionManager.connectionState)
-                    if appViewModel.pollingManager?.isPolling == true {
+                    if gameStateManager.isConnected {
                         HStack(spacing: 4) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text("Polling")
+                            Circle()
+                                .fill(.green)
+                                .frame(width: 6, height: 6)
+                            Text("Live")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.green)
                         }
                     }
-                    if let error = appViewModel.pollingManager?.lastError {
+                    if let error = gameStateManager.lastError {
                         Text(error)
                             .font(.caption)
                             .foregroundStyle(.red)
@@ -64,15 +65,15 @@ struct ConnectedHubView: View {
 }
 
 enum BottomBarTab: String, CaseIterable {
+    case events = "Events"
     case chat = "Chat"
     case log = "Captain's Log"
-    case alerts = "Alerts"
 
     var icon: String {
         switch self {
+        case .events: return "bolt.fill"
         case .chat: return "bubble.left.and.bubble.right"
         case .log: return "book"
-        case .alerts: return "bell"
         }
     }
 }

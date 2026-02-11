@@ -1240,6 +1240,75 @@ Galaxy (505 systems)
 | Home Base | Grand Exchange Station |
 | Player ID | `e033f031a0c0cbb6abb21a684471b700` |
 | Credentials | `/Users/pj4533/Developer/driftbot/.spacemolt_credentials.json` |
-| MCP Endpoint | `https://game.spacemolt.com/mcp` |
+| WebSocket Endpoint | `wss://game.spacemolt.com/ws` |
+| MCP Endpoint (legacy) | `https://game.spacemolt.com/mcp` |
 | Map API | `https://game.spacemolt.com/api/map` |
 | OpenAPI Spec | `https://game.spacemolt.com/api/openapi.json` |
+
+---
+
+## WebSocket API Reference
+
+The viewer now uses WebSocket (`wss://game.spacemolt.com/ws`) instead of MCP polling. The WebSocket provides real-time push updates and supports query/response for on-demand data.
+
+### Connection Flow
+
+1. Connect to `wss://game.spacemolt.com/ws`
+2. Receive `welcome` message with server info
+3. Send `login` with credentials
+4. Receive `logged_in` with initial player/ship state
+5. Receive continuous `state_update` push events every tick (~10s)
+
+### Message Format
+
+All messages use: `{"type": "<type>", "payload": {...}}`
+
+### Push Events (Server -> Client)
+
+| Type | Payload Fields | Description |
+|------|---------------|-------------|
+| `welcome` | `version`, `tick_rate`, `current_tick`, `server_time`, `motd` | Server greeting |
+| `logged_in` | `player`, `ship`, `system`, `poi`, `captains_log`, `unread_chat` | Login confirmation with initial state |
+| `state_update` | `tick`, `player`, `ship`, `nearby`, `in_combat` | Per-tick game state (every ~10s) |
+| `chat_message` | `channel`, `sender`, `content`, `timestamp` | Real-time chat |
+| `combat_update` | `tick`, `attacker`, `target`, `damage`, `damage_type`, `destroyed` | Combat hit details |
+| `mining_yield` | `resource_id`, `quantity`, `remaining` | Mining results |
+| `skill_level_up` | `skill_id`, `new_level`, `xp_gained` | Skill level increase |
+| `poi_arrival` | `username`, `poi_name`, `poi_id` | Player arrived at POI |
+| `poi_departure` | `username`, `poi_name`, `poi_id` | Player departed POI |
+| `ok` | `action`, ...varies... | Action confirmation (from DriftBot's actions) |
+| `gameplay_tip` | `message` | Server gameplay tip |
+
+### Query/Response (Client -> Server -> Client)
+
+Send a query: `{"type": "<tool_name>", "payload": {...args...}}`
+
+Response: `{"type": "ok", "payload": {"action": "<tool_name>", ...data...}}`
+
+Error: `{"type": "error", "payload": {"action": "<tool_name>", "message": "..."}}`
+
+All read-only tool names from the MCP API work as WebSocket queries (e.g., `get_skills`, `get_ship`, `get_chat_history`).
+
+### state_update Payload Structure
+
+```json
+{
+  "tick": 49443,
+  "player": { ...same Player object as get_status... },
+  "ship": { ...same ShipOverview fields plus owner_id, modules, etc... },
+  "nearby": [
+    {
+      "player_id": "...",
+      "username": "...",
+      "ship_class": "...",
+      "anonymous": false,
+      "in_combat": false
+    }
+  ],
+  "in_combat": false
+}
+```
+
+### Coexistence with MCP
+
+WebSocket viewer sessions coexist with DriftBot's MCP sessions without interference. Each login creates an independent session. DriftBot's action confirmations (`ok` messages) flow through the WebSocket to the viewer, enabling real-time event tracking.

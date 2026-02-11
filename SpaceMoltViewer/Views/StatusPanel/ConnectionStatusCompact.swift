@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ConnectionStatusCompact: View {
     let connectionState: ConnectionState
-    let isPolling: Bool
+    let isLive: Bool
 
     var body: some View {
         HStack(spacing: 6) {
@@ -12,10 +12,11 @@ struct ConnectionStatusCompact: View {
             Text(connectionState.statusText)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-            if isPolling {
+            if isLive {
                 Spacer()
-                ProgressView()
-                    .controlSize(.mini)
+                Text("Live")
+                    .font(.caption2.bold())
+                    .foregroundStyle(.green)
             }
         }
         .padding(.horizontal, 10)
@@ -25,7 +26,7 @@ struct ConnectionStatusCompact: View {
     private var indicatorColor: Color {
         switch connectionState {
         case .connected: return .green
-        case .connecting: return .yellow
+        case .connecting, .reconnecting: return .yellow
         case .disconnected: return .gray
         case .error: return .red
         }

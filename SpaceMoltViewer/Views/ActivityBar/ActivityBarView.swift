@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ActivityBarView: View {
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
     @Binding var selectedTab: BottomBarTab
 
     var body: some View {
@@ -36,12 +36,12 @@ struct ActivityBarView: View {
 
             // Content
             switch selectedTab {
+            case .events:
+                EventsFeedView(gameStateManager: gameStateManager)
             case .chat:
-                ChatFeedView(pollingManager: pollingManager)
+                ChatFeedView(gameStateManager: gameStateManager)
             case .log:
-                LogFeedView(pollingManager: pollingManager)
-            case .alerts:
-                AlertsFeedView(pollingManager: pollingManager)
+                LogFeedView(gameStateManager: gameStateManager)
             }
         }
     }

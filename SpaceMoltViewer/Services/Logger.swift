@@ -15,4 +15,5 @@ public enum SMLog {
     public static let ui = Logger(subsystem: subsystem, category: "UI")
     public static let map = Logger(subsystem: subsystem, category: "Map")
     public static let decode = Logger(subsystem: subsystem, category: "Decode")
+    public static let websocket = Logger(subsystem: subsystem, category: "WebSocket")
 }

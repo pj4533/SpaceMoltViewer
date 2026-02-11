@@ -2,10 +2,10 @@ import SwiftUI
 
 struct MissionInspectorView: View {
     let missionId: String
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
 
     private var mission: Mission? {
-        pollingManager.missions?.missions?.first { $0.id == missionId }
+        gameStateManager.missions?.missions?.first { $0.id == missionId }
     }
 
     var body: some View {

@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct SkillsInspectorView: View {
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
 
     private var skills: [PlayerSkill] {
-        pollingManager.skills?.playerSkills.sorted { $0.level > $1.level } ?? []
+        gameStateManager.skills?.playerSkills.sorted { $0.level > $1.level } ?? []
     }
 
     private var totalLevels: Int {

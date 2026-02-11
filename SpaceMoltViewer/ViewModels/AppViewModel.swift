@@ -5,8 +5,7 @@ import Observation
 @Observable
 class AppViewModel {
     let sessionManager = SessionManager()
-    var gameAPI: GameAPI?
-    var pollingManager: PollingManager?
+    var gameStateManager: GameStateManager?
     var settingsViewModel: SettingsViewModel?
     var mapViewModel: MapViewModel?
     var inspectorFocus: InspectorFocus = .none
@@ -17,21 +16,23 @@ class AppViewModel {
     }
 
     func onConnect() {
-        SMLog.general.info("onConnect: creating GameAPI and PollingManager")
+        SMLog.general.info("onConnect: creating GameStateManager")
+        guard let client = sessionManager.webSocketClient else {
+            SMLog.general.error("onConnect: no WebSocket client available")
+            return
+        }
         let api = GameAPI(sessionManager: sessionManager)
-        gameAPI = api
-        let polling = PollingManager(gameAPI: api)
-        pollingManager = polling
-        mapViewModel = MapViewModel(pollingManager: polling, appViewModel: self)
-        polling.startPolling()
-        SMLog.general.info("onConnect: polling started")
+        let gsm = GameStateManager(webSocketClient: client, gameAPI: api)
+        gameStateManager = gsm
+        mapViewModel = MapViewModel(gameStateManager: gsm, appViewModel: self)
+        gsm.start()
+        SMLog.general.info("onConnect: GameStateManager started")
     }
 
     func onDisconnect() {
-        SMLog.general.info("onDisconnect: stopping polling and clearing state")
-        pollingManager?.stopPolling()
-        pollingManager = nil
-        gameAPI = nil
+        SMLog.general.info("onDisconnect: stopping and clearing state")
+        gameStateManager?.stop()
+        gameStateManager = nil
         mapViewModel = nil
         inspectorFocus = .none
         sessionManager.disconnect()
@@ -47,7 +48,7 @@ class AppViewModel {
             SMLog.general.info("autoConnect: found saved credentials for \(creds.username), attempting connection")
             await sessionManager.connect(username: creds.username, password: creds.password)
             if sessionManager.isConnected {
-                SMLog.general.info("autoConnect: connection successful, starting polling")
+                SMLog.general.info("autoConnect: connection successful, starting game state manager")
                 onConnect()
             } else {
                 SMLog.general.warning("autoConnect: connection failed")

@@ -1,13 +1,13 @@
 import SwiftUI
 
 struct ChatFeedView: View {
-    let pollingManager: PollingManager
+    let gameStateManager: GameStateManager
     @State private var selectedChannel: String = "system"
 
     private static let channels = ["system", "local", "faction"]
 
     private var messages: [ChatMessage] {
-        pollingManager.chatMessages?.messages ?? []
+        gameStateManager.chatMessages?.messages ?? []
     }
 
     var body: some View {
@@ -16,7 +16,7 @@ struct ChatFeedView: View {
                 ForEach(Self.channels, id: \.self) { channel in
                     Button {
                         selectedChannel = channel
-                        Task { await pollingManager.refreshChat(channel: channel) }
+                        Task { await gameStateManager.refreshChat(channel: channel) }
                     } label: {
                         Text(channel.capitalized)
                             .font(.caption2)
