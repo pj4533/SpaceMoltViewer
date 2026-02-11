@@ -5,6 +5,10 @@ struct GalaxyMapView: View {
 
     var body: some View {
         ZStack {
+            // Dark space background
+            Color.black
+                .ignoresSafeArea()
+
             if viewModel.systems.isEmpty {
                 EmptyStateView(
                     icon: "map",
@@ -81,29 +85,42 @@ struct GalaxyMapView: View {
         }
     }
 
+    // MARK: - Empire Legend
+
     private var empireLegend: some View {
-        HStack(spacing: 10) {
-            legendDot(color: .purple, label: "Nebula")
-            legendDot(color: .yellow, label: "Solar")
-            legendDot(color: .cyan, label: "Void")
-            legendDot(color: .green, label: "Terra")
-            legendDot(color: .gray, label: "Neutral")
+        VStack(alignment: .leading, spacing: 4) {
+            Text("EMPIRES")
+                .font(.caption2.bold())
+                .foregroundStyle(.white.opacity(0.8))
+
+            legendDot(color: empireSwiftColor("solarian"), label: "Solarian")
+            legendDot(color: empireSwiftColor("voidborn"), label: "Voidborn")
+            legendDot(color: empireSwiftColor("crimson"), label: "Crimson")
+            legendDot(color: empireSwiftColor("nebula"), label: "Nebula")
+            legendDot(color: empireSwiftColor("outerrim"), label: "Outer Rim")
+            legendDot(color: empireSwiftColor("neutral"), label: "Neutral")
+            legendDot(color: empireSwiftColor("pirate"), label: "Pirate Stronghold")
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .padding(10)
+        .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.white.opacity(0.15), lineWidth: 1)
+        )
     }
 
     private func legendDot(color: Color, label: String) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             Circle()
                 .fill(color)
-                .frame(width: 6, height: 6)
+                .frame(width: 8, height: 8)
             Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.7))
         }
     }
+
+    // MARK: - Drawing
 
     private func drawConnections(context: GraphicsContext, size: CGSize) {
         let systemMap = Dictionary(uniqueKeysWithValues: viewModel.systems.map { ($0.id, $0) })
@@ -112,7 +129,6 @@ struct GalaxyMapView: View {
             let from = viewModel.normalizedPosition(for: system, in: size)
             for connId in system.connections ?? [] {
                 guard let target = systemMap[connId] else { continue }
-                // Only draw each connection once
                 guard system.id < target.id else { continue }
                 let to = viewModel.normalizedPosition(for: target, in: size)
 
@@ -121,7 +137,7 @@ struct GalaxyMapView: View {
                 path.addLine(to: to)
                 context.stroke(
                     path,
-                    with: .color(.gray.opacity(0.2)),
+                    with: .color(.gray.opacity(0.25)),
                     lineWidth: 0.5
                 )
             }
@@ -129,45 +145,118 @@ struct GalaxyMapView: View {
     }
 
     private func drawSystems(context: GraphicsContext, size: CGSize) {
-        for system in viewModel.systems {
+        // Draw non-special systems first, then empire, then capitals on top
+        let sorted = viewModel.systems.sorted { a, b in
+            let aOrder = drawOrder(a)
+            let bOrder = drawOrder(b)
+            return aOrder < bOrder
+        }
+
+        for system in sorted {
             let pos = viewModel.normalizedPosition(for: system, in: size)
             let isCurrent = viewModel.isCurrent(system)
             let isVisited = viewModel.isVisited(system)
             let isSelected = system.id == viewModel.selectedSystemId
+            let isCapital = system.isHome == true
+            let isStronghold = system.isStronghold == true
+            let empireKey = viewModel.empireColor(for: system)
+            let color = empireSwiftColor(empireKey)
 
-            let radius: CGFloat = isCurrent ? 5 : (isSelected ? 4 : 3)
-            let color = empireSwiftColor(viewModel.empireColor(for: system))
-            let opacity: Double = isCurrent ? 1.0 : (isVisited ? 0.9 : 0.3)
+            let baseRadius: CGFloat = {
+                if isCapital { return 7 }
+                if isCurrent { return 5 }
+                if isStronghold { return 4 }
+                if isSelected { return 4 }
+                if system.empire != nil { return 3.5 }
+                return 2.5
+            }()
+
+            let opacity: Double = {
+                if isCapital || isCurrent || isStronghold { return 1.0 }
+                if system.empire != nil { return 0.9 }
+                if isVisited { return 0.6 }
+                return 0.35
+            }()
 
             let rect = CGRect(
-                x: pos.x - radius,
-                y: pos.y - radius,
-                width: radius * 2,
-                height: radius * 2
+                x: pos.x - baseRadius,
+                y: pos.y - baseRadius,
+                width: baseRadius * 2,
+                height: baseRadius * 2
             )
 
+            // Current system glow
             if isCurrent {
-                let glowRect = rect.insetBy(dx: -4, dy: -4)
+                let glowRect = rect.insetBy(dx: -5, dy: -5)
                 context.fill(
                     Circle().path(in: glowRect),
-                    with: .color(color.opacity(0.3))
+                    with: .color(.green.opacity(0.3))
                 )
             }
 
+            // Capital outer ring glow
+            if isCapital {
+                let outerGlow = rect.insetBy(dx: -6, dy: -6)
+                context.fill(
+                    Circle().path(in: outerGlow),
+                    with: .color(color.opacity(0.2))
+                )
+                let ring = rect.insetBy(dx: -4, dy: -4)
+                context.stroke(
+                    Circle().path(in: ring),
+                    with: .color(color.opacity(0.6)),
+                    lineWidth: 1.5
+                )
+            }
+
+            // Pirate stronghold glow
+            if isStronghold {
+                let glowRect = rect.insetBy(dx: -4, dy: -4)
+                context.fill(
+                    Circle().path(in: glowRect),
+                    with: .color(color.opacity(0.25))
+                )
+            }
+
+            // Main dot
             context.fill(
                 Circle().path(in: rect),
                 with: .color(color.opacity(opacity))
             )
 
+            // Selection ring
             if isSelected {
                 context.stroke(
                     Circle().path(in: rect.insetBy(dx: -2, dy: -2)),
                     with: .color(.white),
-                    lineWidth: 1
+                    lineWidth: 1.5
+                )
+            }
+
+            // Capital name label
+            if isCapital {
+                let text = Text(system.name)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.white)
+                context.draw(
+                    context.resolve(text),
+                    at: CGPoint(x: pos.x, y: pos.y + baseRadius + 8),
+                    anchor: .top
                 )
             }
         }
     }
+
+    /// Controls z-ordering: higher = drawn on top
+    private func drawOrder(_ system: MapSystem) -> Int {
+        if system.isHome == true { return 3 }
+        if viewModel.isCurrent(system) { return 2 }
+        if system.isStronghold == true { return 1 }
+        if system.empire != nil { return 1 }
+        return 0
+    }
+
+    // MARK: - Tap Handling
 
     private func handleTap(at location: CGPoint, in size: CGSize) {
         let adjustedLocation = CGPoint(
@@ -190,13 +279,19 @@ struct GalaxyMapView: View {
         viewModel.selectSystem(closest?.id)
     }
 
+    // MARK: - Colors
+
+    /// Maps empire keys to SwiftUI colors matching the web map
     private func empireSwiftColor(_ empire: String) -> Color {
         switch empire.lowercased() {
-        case "nebula": return .purple
-        case "solar": return .yellow
-        case "void": return .cyan
-        case "terra": return .green
-        default: return .gray
+        case "solarian": return Color(red: 0.29, green: 0.56, blue: 0.85) // #4A90D9
+        case "voidborn": return Color(red: 0, green: 1, blue: 1)          // #00FFFF cyan
+        case "crimson": return Color(red: 0.86, green: 0.08, blue: 0.24)  // #DC143C
+        case "nebula": return Color(red: 1, green: 0.84, blue: 0)         // #FFD700 gold
+        case "outerrim": return Color(red: 0.25, green: 0.41, blue: 0.88) // #4169E1 royal blue
+        case "pirate": return Color(red: 1, green: 0.2, blue: 0.2)        // bright red
+        case "neutral": return Color(white: 0.65)                          // light gray
+        default: return Color(white: 0.65)
         }
     }
 }

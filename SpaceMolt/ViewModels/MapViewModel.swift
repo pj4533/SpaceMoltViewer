@@ -38,18 +38,20 @@ class MapViewModel {
         return systems.first { $0.id == id }
     }
 
-    // Normalize game coordinates to 0...1 range
+    // Normalize game coordinates to screen position
+    // Y is NOT flipped — negative Y maps to top of screen (matching web map orientation)
     func normalizedPosition(for system: MapSystem, in size: CGSize) -> CGPoint {
         let nx = (system.x - minX) / (maxX - minX)
         let ny = (system.y - minY) / (maxY - minY)
         return CGPoint(
             x: nx * size.width,
-            y: (1 - ny) * size.height // flip Y for screen coords
+            y: ny * size.height
         )
     }
 
     func empireColor(for system: MapSystem) -> String {
-        system.empire ?? "neutral"
+        if system.isStronghold == true { return "pirate" }
+        return system.empire ?? "neutral"
     }
 
     func isVisited(_ system: MapSystem) -> Bool {
