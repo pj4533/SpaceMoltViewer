@@ -2,7 +2,7 @@ import Foundation
 
 struct ChatHistoryResponse: Decodable, Sendable {
     let messages: [ChatMessage]
-    let hasMore: Bool
+    let hasMore: Bool?
 
     enum CodingKeys: String, CodingKey {
         case messages
@@ -19,8 +19,9 @@ struct ChatMessage: Decodable, Sendable, Identifiable {
     let timestamp: String
 
     enum CodingKeys: String, CodingKey {
-        case id, channel, content, timestamp
+        case id, channel, content
         case senderId = "sender_id"
-        case senderName = "sender_name"
+        case senderName = "sender"
+        case timestamp = "timestamp_utc"
     }
 }
