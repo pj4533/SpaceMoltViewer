@@ -105,6 +105,11 @@ class GameStateManager {
     // MARK: - WebSocket Push Event Processing
 
     private func handleMessage(_ message: WSRawMessage) {
+        // Refresh skills on any real event (XP can change on any action)
+        if message.type != "tick" {
+            Task { await refreshSkills() }
+        }
+
         switch message.type {
         case "state_update":
             handleStateUpdate(message.payloadData)
@@ -226,7 +231,6 @@ class GameStateManager {
         let skill = payload.skillId ?? "unknown"
         let level = payload.newLevel ?? 0
         appendEvent(category: .skill, title: "\(skill) reached level \(level)", detail: payload.xpGained.map { "+\($0) XP" }, rawType: "skill_level_up")
-        Task { await refreshSkills() }
     }
 
     private func handlePoiEvent(_ data: Data, arrived: Bool) {
