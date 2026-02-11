@@ -117,6 +117,10 @@ struct GameAPI {
         try await call(tool: "view_orders")
     }
 
+    func viewStorage() async throws -> StorageResponse {
+        try await call(tool: "view_storage")
+    }
+
     // MARK: - On Demand
 
     func getMap() async throws -> MapResponse {

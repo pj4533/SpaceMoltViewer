@@ -44,6 +44,12 @@ struct StatusPanelView: View {
                         })
                     }
 
+                    if let storage = pollingManager.storage {
+                        StorageCompact(storage: storage, onTap: {
+                            onFocusChange(.storageDetail)
+                        })
+                    }
+
                     // Skills summary tap target
                     if let skills = pollingManager.skills {
                         Button {

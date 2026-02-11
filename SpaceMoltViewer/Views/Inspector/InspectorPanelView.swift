@@ -47,6 +47,8 @@ struct InspectorPanelView: View {
                 CargoInspectorView(pollingManager: pollingManager)
             case .nearbyDetail:
                 NearbyInspectorView(pollingManager: pollingManager)
+            case .storageDetail:
+                StorageInspectorView(pollingManager: pollingManager)
             }
         }
     }
@@ -60,6 +62,7 @@ struct InspectorPanelView: View {
         case .skillsOverview: return "SKILLS"
         case .cargoDetail: return "CARGO"
         case .nearbyDetail: return "NEARBY"
+        case .storageDetail: return "STORAGE"
         }
     }
 }

@@ -16,6 +16,7 @@ class PollingManager {
     var missions: MissionsResponse?
     var drones: DronesResponse?
     var chatMessages: ChatHistoryResponse?
+    var storage: StorageResponse?
 
     // Low frequency (60s)
     var shipDetail: ShipDetailResponse?
@@ -156,6 +157,14 @@ class PollingManager {
             missions = try await gameAPI.getActiveMissions()
             drones = try await gameAPI.getDrones()
             chatMessages = try await gameAPI.getChatHistory(channel: "system")
+
+            if let docked = playerStatus?.player.dockedAtBase, !docked.isEmpty {
+                storage = try await gameAPI.viewStorage()
+                SMLog.polling.debug("Medium-freq: storage loaded at \(self.storage?.displayName ?? "?")")
+            } else {
+                storage = nil
+            }
+
             SMLog.polling.debug("Medium-freq: system=\(self.system?.system.name ?? "?"), nearby=\(self.nearby?.count ?? 0) players + \(self.nearby?.pirateCount ?? 0) pirates, missions=\(self.missions?.totalCount ?? 0)")
         } catch {
             lastError = error.localizedDescription

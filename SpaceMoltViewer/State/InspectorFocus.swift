@@ -8,4 +8,5 @@ enum InspectorFocus: Equatable {
     case skillsOverview
     case cargoDetail
     case nearbyDetail
+    case storageDetail
 }
