@@ -59,6 +59,7 @@ struct ConnectedHubView: View {
                             .lineLimit(1)
                     }
                 }
+                .padding(.horizontal, 12)
             }
         }
     }
