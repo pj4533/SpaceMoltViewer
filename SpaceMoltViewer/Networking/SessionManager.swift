@@ -27,14 +27,14 @@ enum ConnectionState: Sendable {
 
 @Observable
 class SessionManager {
-    var connectionState: ConnectionState = .disconnected
+    private(set) var connectionState: ConnectionState = .disconnected
 
     // WebSocket for real-time push events
-    var webSocketClient: WebSocketClient?
+    private(set) var webSocketClient: WebSocketClient?
 
     // MCP session for data queries via GameAPI
-    var mcpSessionId: String?
-    var gameSessionId: String?
+    private(set) var mcpSessionId: String?
+    private(set) var gameSessionId: String?
 
     var isConnected: Bool { connectionState.isConnected }
 
@@ -64,6 +64,11 @@ class SessionManager {
     private func connectWebSocket(username: String, password: String) async throws -> WebSocketClient {
         SMLog.auth.info("WebSocket: connecting...")
         let client = WebSocketClient()
+        client.connectionStateHandler = { [weak self] state in
+            Task { @MainActor in
+                self?.connectionState = state
+            }
+        }
         _ = try await client.connect()
         _ = try await client.login(username: username, password: password)
         await client.enableReconnect()
@@ -88,17 +93,20 @@ class SessionManager {
         )
 
         struct LoginResponse: Decodable {
-            let session_id: String
+            let sessionId: String
+            enum CodingKeys: String, CodingKey {
+                case sessionId = "session_id"
+            }
         }
         let loginResponse = try JSONDecoder().decode(LoginResponse.self, from: data)
-        gameSessionId = loginResponse.session_id
+        gameSessionId = loginResponse.sessionId
         SMLog.auth.info("MCP: session established")
     }
 
-    func disconnect() {
+    func disconnect() async {
         SMLog.auth.info("Disconnecting")
         if let client = webSocketClient {
-            Task { await client.disconnect() }
+            await client.shutdown()
         }
         webSocketClient = nil
         mcpSessionId = nil
@@ -109,7 +117,7 @@ class SessionManager {
 
     func reconnect(username: String, password: String) async {
         SMLog.auth.info("Reconnecting...")
-        disconnect()
+        await disconnect()
         await connect(username: username, password: password)
     }
 }

@@ -15,7 +15,7 @@ struct SpaceMoltViewerApp: App {
                 SettingsView(
                     viewModel: settingsVM,
                     onConnect: { appViewModel.onConnect() },
-                    onDisconnect: { appViewModel.onDisconnect() }
+                    onDisconnect: { Task { await appViewModel.onDisconnect() } }
                 )
                 .frame(width: 450, height: 350)
             }

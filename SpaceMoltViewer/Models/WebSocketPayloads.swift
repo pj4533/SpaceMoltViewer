@@ -14,18 +14,6 @@ struct WelcomePayload: Decodable, Sendable {
     }
 }
 
-struct LoggedInPayload: Decodable, Sendable {
-    let player: Player
-    let ship: ShipOverview
-    let system: SystemResponse?
-    let captainsLog: CaptainsLogResponse?
-
-    enum CodingKeys: String, CodingKey {
-        case player, ship, system
-        case captainsLog = "captains_log"
-    }
-}
-
 struct StateUpdatePayload: Decodable, Sendable {
     let tick: Int
     let player: Player
@@ -127,5 +115,16 @@ struct PlayerDiedPayload: Decodable, Sendable {
         case cloneCost = "clone_cost"
         case insurancePayout = "insurance_payout"
         case newShipClass = "new_ship_class"
+    }
+}
+
+struct OkActionPayload: Decodable, Sendable {
+    let action: String
+    let destination: String?
+    let base: String?
+    let system: String?
+
+    enum CodingKeys: String, CodingKey {
+        case action, destination, base, system
     }
 }

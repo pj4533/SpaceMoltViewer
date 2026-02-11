@@ -1,25 +1,5 @@
 import Foundation
 
-struct MapResponse: Decodable, Sendable {
-    let systems: [AuthenticatedMapSystem]
-    let currentSystem: String
-
-    enum CodingKeys: String, CodingKey {
-        case systems
-        case currentSystem = "current_system"
-    }
-}
-
-struct AuthenticatedMapSystem: Decodable, Sendable, Identifiable {
-    let id: String
-    let name: String
-    let x: Double
-    let y: Double
-    let type: String?
-    let visited: Bool?
-    let connections: [String]
-}
-
 struct PublicMapResponse: Decodable, Sendable {
     let systems: [MapSystem]
 }

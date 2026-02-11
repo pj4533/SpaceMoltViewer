@@ -2,12 +2,12 @@ import Foundation
 import OSLog
 import Observation
 
-@Observable
+@MainActor @Observable
 class AppViewModel {
     let sessionManager = SessionManager()
-    var gameStateManager: GameStateManager?
-    var settingsViewModel: SettingsViewModel?
-    var mapViewModel: MapViewModel?
+    private(set) var gameStateManager: GameStateManager?
+    private(set) var settingsViewModel: SettingsViewModel?
+    private(set) var mapViewModel: MapViewModel?
     var inspectorFocus: InspectorFocus = .none
 
     init() {
@@ -24,18 +24,22 @@ class AppViewModel {
         let api = GameAPI(sessionManager: sessionManager)
         let gsm = GameStateManager(webSocketClient: client, gameAPI: api)
         gameStateManager = gsm
-        mapViewModel = MapViewModel(gameStateManager: gsm, appViewModel: self)
+        let mvm = MapViewModel(gameStateManager: gsm)
+        mvm.onFocusChange = { [weak self] focus in
+            self?.inspectorFocus = focus
+        }
+        mapViewModel = mvm
         gsm.start()
         SMLog.general.info("onConnect: GameStateManager started")
     }
 
-    func onDisconnect() {
+    func onDisconnect() async {
         SMLog.general.info("onDisconnect: stopping and clearing state")
         gameStateManager?.stop()
         gameStateManager = nil
         mapViewModel = nil
         inspectorFocus = .none
-        sessionManager.disconnect()
+        await sessionManager.disconnect()
         SMLog.general.info("onDisconnect: complete")
     }
 

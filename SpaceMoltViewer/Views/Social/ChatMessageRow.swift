@@ -23,14 +23,6 @@ struct ChatMessageRow: View {
     }
 
     private var formattedTime: String {
-        // Show just the time portion from ISO timestamp
-        if let tIndex = message.timestamp.firstIndex(of: "T") {
-            let timeStr = message.timestamp[message.timestamp.index(after: tIndex)...]
-            if let zIndex = timeStr.firstIndex(of: "Z") ?? timeStr.firstIndex(of: "+") {
-                return String(timeStr[..<zIndex].prefix(5))
-            }
-            return String(timeStr.prefix(5))
-        }
-        return message.timestamp
+        message.timestamp.isoTimeOnly
     }
 }

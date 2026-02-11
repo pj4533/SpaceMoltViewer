@@ -16,28 +16,14 @@ struct InspectorEmptyView: View {
 
                     Text(system.securityStatus)
                         .font(.caption)
-                        .foregroundStyle(system.securityStatus.contains("Lawless") || system.securityStatus.contains("no police") ? .red : .green)
+                        .foregroundStyle(system.securityStatus.isLawless ? .red : .green)
 
                     if !system.pois.isEmpty {
                         Divider()
                         Text("POINTS OF INTEREST")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-
-                        ForEach(system.pois) { poi in
-                            HStack(spacing: 6) {
-                                Image(systemName: poi.poiIcon)
-                                    .frame(width: 14)
-                                    .foregroundStyle(.secondary)
-                                    .font(.caption)
-                                Text(poi.name)
-                                    .font(.caption)
-                                Spacer()
-                                Text(poi.type)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+                        PoiListView(pois: system.pois)
                     }
 
                     if !system.system.connections.isEmpty {

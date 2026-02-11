@@ -11,7 +11,7 @@ struct ShipVitalsCompact: View {
                     Text(ship.name)
                         .font(.caption.bold())
                     Spacer()
-                    Text(ship.classId.replacingOccurrences(of: "_", with: " ").capitalized)
+                    Text(ship.classId.displayFormatted)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }

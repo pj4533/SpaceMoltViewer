@@ -1,4 +1,5 @@
 import Foundation
+import os
 import OSLog
 
 enum MCPError: Error, LocalizedError {
@@ -23,11 +24,13 @@ enum MCPError: Error, LocalizedError {
 
 struct MCPClient {
     static let baseURL = URL(string: "https://game.spacemolt.com/mcp")!
-    private static var requestId = 0
+    private static let requestIdLock = OSAllocatedUnfairLock(initialState: 0)
 
     private static func nextId() -> Int {
-        requestId += 1
-        return requestId
+        requestIdLock.withLock { state in
+            state += 1
+            return state
+        }
     }
 
     private static func makeRequest(mcpSessionId: String? = nil) -> URLRequest {

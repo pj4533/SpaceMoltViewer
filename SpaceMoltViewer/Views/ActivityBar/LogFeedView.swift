@@ -60,13 +60,6 @@ struct LogFeedView: View {
     }
 
     private func formatDate(_ dateString: String) -> String {
-        if let tIndex = dateString.firstIndex(of: "T") {
-            let timeStr = dateString[dateString.index(after: tIndex)...]
-            if let zIndex = timeStr.firstIndex(of: "Z") ?? timeStr.firstIndex(of: "+") {
-                return String(timeStr[..<zIndex].prefix(5))
-            }
-            return String(timeStr.prefix(5))
-        }
-        return dateString
+        dateString.isoTimeOnly
     }
 }

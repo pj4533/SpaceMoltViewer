@@ -34,7 +34,7 @@ struct LocationCompact: View {
                     }
 
                     if !player.currentPoi.isEmpty {
-                        Text(player.currentPoi.replacingOccurrences(of: "_", with: " ").capitalized)
+                        Text(player.currentPoi.displayFormatted)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -47,12 +47,12 @@ struct LocationCompact: View {
     }
 
     private func securityLabel(_ status: String) -> String {
-        if status.contains("Lawless") || status.contains("no police") { return "LAWLESS" }
+        if status.isLawless { return "LAWLESS" }
         return "SECURE"
     }
 
     private func securityColor(_ status: String) -> Color {
-        if status.contains("Lawless") || status.contains("no police") { return .red }
+        if status.isLawless { return .red }
         return .green
     }
 }

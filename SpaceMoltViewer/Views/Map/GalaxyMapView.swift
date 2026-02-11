@@ -93,13 +93,13 @@ struct GalaxyMapView: View {
                 .font(.caption2.bold())
                 .foregroundStyle(.white.opacity(0.8))
 
-            legendDot(color: empireSwiftColor("solarian"), label: "Solarian")
-            legendDot(color: empireSwiftColor("voidborn"), label: "Voidborn")
-            legendDot(color: empireSwiftColor("crimson"), label: "Crimson")
-            legendDot(color: empireSwiftColor("nebula"), label: "Nebula")
-            legendDot(color: empireSwiftColor("outerrim"), label: "Outer Rim")
-            legendDot(color: empireSwiftColor("neutral"), label: "Neutral")
-            legendDot(color: empireSwiftColor("pirate"), label: "Pirate Stronghold")
+            legendDot(color: EmpireTheme.color(for: "solarian"), label: "Solarian")
+            legendDot(color: EmpireTheme.color(for: "voidborn"), label: "Voidborn")
+            legendDot(color: EmpireTheme.color(for: "crimson"), label: "Crimson")
+            legendDot(color: EmpireTheme.color(for: "nebula"), label: "Nebula")
+            legendDot(color: EmpireTheme.color(for: "outerrim"), label: "Outer Rim")
+            legendDot(color: EmpireTheme.color(for: "neutral"), label: "Neutral")
+            legendDot(color: EmpireTheme.color(for: "pirate"), label: "Pirate Stronghold")
         }
         .padding(10)
         .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 8))
@@ -160,7 +160,7 @@ struct GalaxyMapView: View {
             let isCapital = system.isHome == true
             let isStronghold = system.isStronghold == true
             let empireKey = viewModel.empireColor(for: system)
-            let color = empireSwiftColor(empireKey)
+            let color = EmpireTheme.color(for: empireKey)
 
             let baseRadius: CGFloat = {
                 if isCapital { return 7 }
@@ -279,19 +279,5 @@ struct GalaxyMapView: View {
         viewModel.selectSystem(closest?.id)
     }
 
-    // MARK: - Colors
 
-    /// Maps empire keys to SwiftUI colors matching the web map
-    private func empireSwiftColor(_ empire: String) -> Color {
-        switch empire.lowercased() {
-        case "solarian": return Color(red: 0.29, green: 0.56, blue: 0.85) // #4A90D9
-        case "voidborn": return Color(red: 0, green: 1, blue: 1)          // #00FFFF cyan
-        case "crimson": return Color(red: 0.86, green: 0.08, blue: 0.24)  // #DC143C
-        case "nebula": return Color(red: 1, green: 0.84, blue: 0)         // #FFD700 gold
-        case "outerrim": return Color(red: 0.25, green: 0.41, blue: 0.88) // #4169E1 royal blue
-        case "pirate": return Color(red: 1, green: 0.2, blue: 0.2)        // bright red
-        case "neutral": return Color(white: 0.65)                          // light gray
-        default: return Color(white: 0.65)
-        }
-    }
 }

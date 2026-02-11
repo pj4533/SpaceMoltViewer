@@ -23,7 +23,7 @@ struct ChatFeedView: View {
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
                             .background(selectedChannel == channel ? .white.opacity(0.15) : .clear)
-                            .cornerRadius(4)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
                     }
                     .buttonStyle(.plain)
                 }

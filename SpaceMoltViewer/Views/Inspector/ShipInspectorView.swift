@@ -17,7 +17,7 @@ struct ShipInspectorView: View {
                             .font(.title3.bold())
                         Spacer()
                     }
-                    Text(overview.classId.replacingOccurrences(of: "_", with: " ").capitalized)
+                    Text(overview.classId.displayFormatted)
                         .font(.caption)
                         .foregroundStyle(.secondary)
 

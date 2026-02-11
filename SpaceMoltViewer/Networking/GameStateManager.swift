@@ -2,40 +2,40 @@ import Foundation
 import OSLog
 import Observation
 
-@Observable
+@MainActor @Observable
 class GameStateManager {
     let webSocketClient: WebSocketClient
     let gameAPI: GameAPI
 
-    // Game state properties (same as old PollingManager for view compatibility)
-    var playerStatus: PlayerStatusResponse?
-    var cargo: CargoResponse?
-    var system: SystemResponse?
-    var nearby: NearbyResponse?
-    var missions: MissionsResponse?
-    var drones: DronesResponse?
-    var chatMessages: ChatHistoryResponse?
-    var storage: StorageResponse?
-    var shipDetail: ShipDetailResponse?
-    var skills: SkillsResponse?
-    var ownedShips: OwnedShipsResponse?
-    var orders: OrdersResponse?
-    var publicMap: [MapSystem]?
-    var captainsLog: CaptainsLogResponse?
+    // Game state properties (read-only from views)
+    private(set) var playerStatus: PlayerStatusResponse?
+    private(set) var cargo: CargoResponse?
+    private(set) var system: SystemResponse?
+    private(set) var nearby: NearbyResponse?
+    private(set) var missions: MissionsResponse?
+    private(set) var chatMessages: ChatHistoryResponse?
+    private(set) var storage: StorageResponse?
+    private(set) var shipDetail: ShipDetailResponse?
+    private(set) var skills: SkillsResponse?
+    private(set) var ownedShips: OwnedShipsResponse?
+    private(set) var publicMap: [MapSystem]?
+    private(set) var captainsLog: CaptainsLogResponse?
 
-    var lastError: String?
+    private(set) var lastError: String?
     var isConnected: Bool { _isConnected }
 
     // WebSocket-driven properties
-    var events: [GameEvent] = []
-    var currentTick: Int?
-    var inCombat: Bool = false
-    var travelProgress: Double?
-    var travelDestination: String?
+    private(set) var events: [GameEvent] = []
+    private(set) var currentTick: Int?
+    private(set) var inCombat: Bool = false
+    private(set) var travelProgress: Double?
+    private(set) var travelDestination: String?
 
     // Private
     private var _isConnected = false
     private var messageTask: Task<Void, Never>?
+    private var mapTask: Task<Void, Never>?
+    private var initialLoadTask: Task<Void, Never>?
     private var previousSystem: String?
     private static let maxEvents = 200
 
@@ -50,7 +50,7 @@ class GameStateManager {
         _isConnected = true
 
         // Load public map (HTTP, not MCP)
-        Task {
+        mapTask = Task {
             do {
                 publicMap = try await GameAPI.fetchPublicMap()
                 SMLog.websocket.info("Public map loaded: \(self.publicMap?.count ?? 0) systems")
@@ -64,21 +64,23 @@ class GameStateManager {
             guard let self else { return }
             for await message in self.webSocketClient.messages {
                 guard !Task.isCancelled else { break }
-                await MainActor.run {
-                    self.handleMessage(message)
-                }
+                self.handleMessage(message)
             }
             SMLog.websocket.debug("Message processing loop ended")
         }
 
         // Load initial data via MCP API
-        Task { await loadInitialData() }
+        initialLoadTask = Task { await loadInitialData() }
     }
 
     func stop() {
         SMLog.websocket.info("GameStateManager stopping")
         messageTask?.cancel()
         messageTask = nil
+        mapTask?.cancel()
+        mapTask = nil
+        initialLoadTask?.cancel()
+        initialLoadTask = nil
         _isConnected = false
     }
 
@@ -86,17 +88,17 @@ class GameStateManager {
 
     private func loadInitialData() async {
         SMLog.api.info("Loading initial data via MCP API...")
-        // Fire all initial queries — continue even if some fail
-        await refreshSystem()
-        await refreshCargo()
-        await refreshNearby()
-        await refreshMissions()
-        await refreshDrones()
-        await refreshChat(channel: "system")
-        await refreshShip()
-        await refreshSkills()
-        await refreshCaptainsLog()
-        await refreshOwnedShips()
+        async let s: () = refreshSystem()
+        async let c: () = refreshCargo()
+        async let n: () = refreshNearby()
+        async let sk: () = refreshSkills()
+        async let m: () = refreshMissions()
+        async let ch: () = refreshChat(channel: "system")
+        async let cl: () = refreshCaptainsLog()
+        async let st: () = refreshStorage()
+        async let sh: () = refreshShip()
+        async let os: () = refreshOwnedShips()
+        _ = await (s, c, n, sk, m, ch, cl, st, sh, os)
         SMLog.api.info("Initial data loading complete")
     }
 
@@ -251,12 +253,11 @@ class GameStateManager {
     }
 
     private func handleOkEvent(_ data: Data) {
-        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let action = json["action"] as? String else { return }
+        guard let payload = try? JSONDecoder().decode(OkActionPayload.self, from: data) else { return }
 
-        switch action {
+        switch payload.action {
         case "travel":
-            let dest = json["destination"] as? String ?? "unknown"
+            let dest = payload.destination ?? "unknown"
             appendEvent(category: .navigation, title: "Traveling to \(dest)", detail: nil, rawType: "ok:travel")
         case "arrived":
             appendEvent(category: .navigation, title: "Arrived at destination", detail: nil, rawType: "ok:arrived")
@@ -265,7 +266,7 @@ class GameStateManager {
                 await refreshNearby()
             }
         case "dock":
-            let base = json["base"] as? String ?? "station"
+            let base = payload.base ?? "station"
             appendEvent(category: .base, title: "Docked at \(base)", detail: nil, rawType: "ok:dock")
             Task {
                 await refreshStorage()
@@ -278,7 +279,7 @@ class GameStateManager {
         case "mine":
             appendEvent(category: .mining, title: "Mining", detail: nil, rawType: "ok:mine")
         case "jump":
-            let dest = json["destination"] as? String ?? "unknown system"
+            let dest = payload.destination ?? "unknown system"
             appendEvent(category: .navigation, title: "Jumping to \(dest)", detail: nil, rawType: "ok:jump")
             Task {
                 await refreshSystem()
@@ -304,7 +305,7 @@ class GameStateManager {
         case "repair":
             appendEvent(category: .base, title: "Repaired", detail: nil, rawType: "ok:repair")
         default:
-            appendEvent(category: .system, title: action, detail: nil, rawType: "ok:\(action)")
+            appendEvent(category: .system, title: payload.action, detail: nil, rawType: "ok:\(payload.action)")
         }
     }
 
@@ -326,7 +327,7 @@ class GameStateManager {
 
     // MARK: - MCP API Data Refreshes
 
-    func refreshSystem() async {
+    private func refreshSystem() async {
         do {
             system = try await gameAPI.getSystem()
             SMLog.api.debug("System refreshed: \(self.system?.system.name ?? "?")")
@@ -335,7 +336,7 @@ class GameStateManager {
         }
     }
 
-    func refreshCargo() async {
+    private func refreshCargo() async {
         do {
             cargo = try await gameAPI.getCargo()
         } catch {
@@ -343,7 +344,7 @@ class GameStateManager {
         }
     }
 
-    func refreshNearby() async {
+    private func refreshNearby() async {
         do {
             nearby = try await gameAPI.getNearby()
             SMLog.api.debug("Nearby refreshed: \(self.nearby?.count ?? 0) players, \(self.nearby?.pirateCount ?? 0) pirates")
@@ -352,7 +353,7 @@ class GameStateManager {
         }
     }
 
-    func refreshSkills() async {
+    private func refreshSkills() async {
         do {
             skills = try await gameAPI.getSkills()
         } catch {
@@ -360,19 +361,11 @@ class GameStateManager {
         }
     }
 
-    func refreshMissions() async {
+    private func refreshMissions() async {
         do {
             missions = try await gameAPI.getActiveMissions()
         } catch {
             SMLog.api.error("Failed to refresh missions: \(error.localizedDescription)")
-        }
-    }
-
-    func refreshDrones() async {
-        do {
-            drones = try await gameAPI.getDrones()
-        } catch {
-            SMLog.api.error("Failed to refresh drones: \(error.localizedDescription)")
         }
     }
 
@@ -393,7 +386,7 @@ class GameStateManager {
         }
     }
 
-    func refreshStorage() async {
+    private func refreshStorage() async {
         do {
             storage = try await gameAPI.viewStorage()
         } catch {
@@ -401,7 +394,7 @@ class GameStateManager {
         }
     }
 
-    func refreshShip() async {
+    private func refreshShip() async {
         do {
             shipDetail = try await gameAPI.getShip()
         } catch {
@@ -409,7 +402,7 @@ class GameStateManager {
         }
     }
 
-    func refreshOwnedShips() async {
+    private func refreshOwnedShips() async {
         do {
             ownedShips = try await gameAPI.listShips()
         } catch {

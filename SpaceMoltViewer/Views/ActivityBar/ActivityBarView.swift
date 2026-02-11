@@ -21,7 +21,7 @@ struct ActivityBarView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(selectedTab == tab ? .white.opacity(0.1) : .clear)
-                        .cornerRadius(4)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
                     }
                     .buttonStyle(.plain)
                 }

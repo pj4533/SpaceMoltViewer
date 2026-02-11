@@ -18,10 +18,10 @@ enum GameAPIError: Error, LocalizedError {
 struct GameAPI {
     private static let allowedTools: Set<String> = [
         "get_status", "get_cargo", "get_system", "get_nearby",
-        "get_ship", "get_skills", "get_active_missions", "get_drones",
-        "get_notifications", "get_poi", "get_map", "list_ships",
+        "get_ship", "get_skills", "get_active_missions",
+        "get_poi", "list_ships",
         "captains_log_list", "captains_log_get", "get_chat_history",
-        "get_base", "get_listings", "view_market", "view_orders",
+        "get_base", "get_listings", "view_market",
         "estimate_purchase", "get_trades", "view_storage",
         "get_wrecks", "get_base_wrecks", "raid_status",
         "get_missions", "find_route", "search_systems",
@@ -90,10 +90,6 @@ struct GameAPI {
         try await call(tool: "get_active_missions")
     }
 
-    func getDrones() async throws -> DronesResponse {
-        try await call(tool: "get_drones")
-    }
-
     func getChatHistory(channel: String, limit: Int = 50) async throws -> ChatHistoryResponse {
         SMLog.api.debug("get_chat_history channel=\(channel) limit=\(limit)")
         return try await call(tool: "get_chat_history", extraArgs: ["channel": channel, "limit": limit])
@@ -113,26 +109,14 @@ struct GameAPI {
         try await call(tool: "list_ships")
     }
 
-    func viewOrders() async throws -> OrdersResponse {
-        try await call(tool: "view_orders")
-    }
-
     func viewStorage() async throws -> StorageResponse {
         try await call(tool: "view_storage")
     }
 
     // MARK: - On Demand
 
-    func getMap() async throws -> MapResponse {
-        try await call(tool: "get_map")
-    }
-
     func getCaptainsLog() async throws -> CaptainsLogResponse {
         try await call(tool: "captains_log_list")
-    }
-
-    func getNotifications() async throws -> NotificationsResponse {
-        try await call(tool: "get_notifications")
     }
 
     // MARK: - Public API (no auth needed)

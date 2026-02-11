@@ -29,12 +29,15 @@ final class WebSocketClient: Sendable {
 
     private let state = ClientState()
 
+    /// Handler called when connection state changes (e.g. during reconnection)
+    nonisolated(unsafe) var connectionStateHandler: (@Sendable (ConnectionState) -> Void)?
+
     /// Public message stream for push events (state_update, ok, chat_message, etc.)
     nonisolated let messages: AsyncStream<WSRawMessage>
     private let messageContinuation: AsyncStream<WSRawMessage>.Continuation
 
     init() {
-        let (stream, continuation) = AsyncStream<WSRawMessage>.makeStream(bufferingPolicy: .bufferingNewest(200))
+        let (stream, continuation) = AsyncStream<WSRawMessage>.makeStream(bufferingPolicy: .bufferingOldest(500))
         messages = stream
         messageContinuation = continuation
     }
@@ -48,7 +51,11 @@ final class WebSocketClient: Sendable {
     func connect() async throws -> WelcomePayload {
         SMLog.websocket.info("Connecting to \(self.wsURL)")
 
+        // Invalidate any previous session to prevent leaks
+        await state.invalidateSession()
+
         let session = URLSession(configuration: .default)
+        await state.setSession(session)
         let task = session.webSocketTask(with: wsURL)
         task.resume()
 
@@ -101,11 +108,19 @@ final class WebSocketClient: Sendable {
             task.cancel(with: .goingAway, reason: nil)
         }
 
+        await state.invalidateSession()
         await state.setTask(nil)
         await state.setConnected(false)
         await state.cancelAllWaiters()
-        messageContinuation.finish()
         SMLog.websocket.info("Disconnected")
+    }
+
+    /// Permanently disconnect and close the message stream.
+    /// Use this for user-initiated disconnects. For reconnection, use disconnect() which keeps the stream alive.
+    func shutdown() async {
+        await disconnect()
+        messageContinuation.finish()
+        SMLog.websocket.info("Shut down — message stream closed")
     }
 
     // MARK: - Private
@@ -130,10 +145,19 @@ final class WebSocketClient: Sendable {
     }
 
     private func waitForMessage(ofType expectedType: String, timeout: TimeInterval) async throws -> Data {
-        try await withCheckedThrowingContinuation { continuation in
-            Task {
-                await self.state.registerWaiter(type: expectedType, continuation: continuation)
+        try await withThrowingTaskGroup(of: Data.self) { group in
+            group.addTask {
+                try await withCheckedThrowingContinuation { continuation in
+                    Task { await self.state.registerWaiter(type: expectedType, continuation: continuation) }
+                }
             }
+            group.addTask {
+                try await Task.sleep(for: .seconds(timeout))
+                throw WebSocketError.connectionFailed("Timed out waiting for \(expectedType)")
+            }
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
         }
     }
 
@@ -209,6 +233,7 @@ final class WebSocketClient: Sendable {
     }
 
     private func startReconnect() async {
+        connectionStateHandler?(.reconnecting)
         let reconnectTask = Task { [weak self] in
             guard let self else { return }
             var attempt = 0
@@ -232,6 +257,7 @@ final class WebSocketClient: Sendable {
 
                     _ = try await self.login(username: username, password: password)
                     await self.state.setShouldReconnect(true)
+                    self.connectionStateHandler?(.connected)
                     SMLog.websocket.info("Reconnected successfully")
                     return
                 } catch {
@@ -239,6 +265,7 @@ final class WebSocketClient: Sendable {
                 }
             }
 
+            self.connectionStateHandler?(.error("Reconnection failed"))
             SMLog.websocket.error("Reconnection failed after \(maxAttempts) attempts")
         }
         await state.setReconnectTask(reconnectTask)
@@ -249,6 +276,7 @@ final class WebSocketClient: Sendable {
 
 private actor ClientState {
     var webSocketTask: URLSessionWebSocketTask?
+    var urlSession: URLSession?
     var receiveTask: Task<Void, Never>?
     var reconnectTask: Task<Void, Never>?
     var isConnected = false
@@ -259,6 +287,17 @@ private actor ClientState {
 
     // Waiters for specific message types (welcome, logged_in)
     private var messageWaiters: [String: CheckedContinuation<Data, Error>] = [:]
+    // Buffer for messages that arrive before their waiter is registered (race condition safety)
+    private var pendingMessages: [String: Data] = [:]
+
+    func setSession(_ session: URLSession) {
+        urlSession = session
+    }
+
+    func invalidateSession() {
+        urlSession?.invalidateAndCancel()
+        urlSession = nil
+    }
 
     func setTask(_ task: URLSessionWebSocketTask?) {
         webSocketTask = task
@@ -305,13 +344,25 @@ private actor ClientState {
     // MARK: - Message Waiters
 
     func registerWaiter(type: String, continuation: CheckedContinuation<Data, Error>) {
+        // Check if message already arrived before we registered
+        if let data = pendingMessages.removeValue(forKey: type) {
+            continuation.resume(returning: data)
+            return
+        }
         messageWaiters[type] = continuation
     }
 
     func routeToWaiter(type: String, data: Data) -> Bool {
-        guard let cont = messageWaiters.removeValue(forKey: type) else { return false }
-        cont.resume(returning: data)
-        return true
+        if let cont = messageWaiters.removeValue(forKey: type) {
+            cont.resume(returning: data)
+            return true
+        }
+        // Buffer for late-registering waiters (race condition safety)
+        if type == "welcome" || type == "logged_in" || type == "reconnected" {
+            pendingMessages[type] = data
+            return true  // Don't send to push stream
+        }
+        return false
     }
 
     func cancelAllWaiters() {
@@ -319,5 +370,6 @@ private actor ClientState {
             cont.resume(throwing: WebSocketError.notConnected)
         }
         messageWaiters.removeAll()
+        pendingMessages.removeAll()
     }
 }

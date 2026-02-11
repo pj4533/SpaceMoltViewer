@@ -7,7 +7,7 @@ struct ConnectionStatusCompact: View {
     var body: some View {
         HStack(spacing: 6) {
             Circle()
-                .fill(indicatorColor)
+                .fill(connectionState.color)
                 .frame(width: 6, height: 6)
             Text(connectionState.statusText)
                 .font(.caption2)
@@ -23,12 +23,4 @@ struct ConnectionStatusCompact: View {
         .padding(.vertical, 6)
     }
 
-    private var indicatorColor: Color {
-        switch connectionState {
-        case .connected: return .green
-        case .connecting, .reconnecting: return .yellow
-        case .disconnected: return .gray
-        case .error: return .red
-        }
-    }
 }

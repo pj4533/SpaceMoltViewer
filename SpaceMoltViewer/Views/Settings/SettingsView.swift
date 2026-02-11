@@ -25,8 +25,10 @@ struct SettingsView: View {
                     HStack {
                         if viewModel.sessionManager.isConnected {
                             Button("Disconnect") {
-                                viewModel.disconnect()
-                                onDisconnect()
+                                Task {
+                                    await viewModel.disconnect()
+                                    onDisconnect()
+                                }
                             }
                             .tint(.red)
                         } else {

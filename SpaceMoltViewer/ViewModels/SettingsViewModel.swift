@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-@Observable
+@MainActor @Observable
 class SettingsViewModel {
     var username = ""
     var password = ""
@@ -30,8 +30,8 @@ class SettingsViewModel {
         await sessionManager.connect(username: username, password: password)
     }
 
-    func disconnect() {
-        sessionManager.disconnect()
+    func disconnect() async {
+        await sessionManager.disconnect()
     }
 
     func clearCredentials() {

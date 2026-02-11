@@ -24,7 +24,7 @@ struct PlayerIdentityCompact: View {
             HStack {
                 Text(player.empire.capitalized)
                     .font(.caption)
-                    .foregroundStyle(empireColor)
+                    .foregroundStyle(EmpireTheme.color(for: player.empire))
                 Spacer()
                 HStack(spacing: 2) {
                     Image(systemName: "creditcard")
@@ -38,14 +38,4 @@ struct PlayerIdentityCompact: View {
         .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
     }
 
-    private var empireColor: Color {
-        switch player.empire.lowercased() {
-        case "solarian": return Color(red: 0.29, green: 0.56, blue: 0.85)
-        case "voidborn": return Color(red: 0, green: 1, blue: 1)
-        case "crimson": return Color(red: 0.86, green: 0.08, blue: 0.24)
-        case "nebula": return Color(red: 1, green: 0.84, blue: 0)
-        case "outerrim": return Color(red: 0.25, green: 0.41, blue: 0.88)
-        default: return .secondary
-        }
-    }
 }

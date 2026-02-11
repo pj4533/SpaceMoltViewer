@@ -40,7 +40,7 @@ struct NearbyInspectorView: View {
                                         Text(player.displayName)
                                             .font(.caption)
                                         if let shipClass = player.shipClass {
-                                            Text(shipClass.replacingOccurrences(of: "_", with: " ").capitalized)
+                                            Text(shipClass.displayFormatted)
                                                 .font(.caption2)
                                                 .foregroundStyle(.secondary)
                                         }
@@ -70,7 +70,7 @@ struct NearbyInspectorView: View {
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(pirate.name)
                                             .font(.caption)
-                                        Text(pirate.shipClass.replacingOccurrences(of: "_", with: " ").capitalized)
+                                        Text(pirate.shipClass.displayFormatted)
                                             .font(.caption2)
                                             .foregroundStyle(.secondary)
                                     }

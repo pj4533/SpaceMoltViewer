@@ -48,7 +48,7 @@ struct SystemInspectorView: View {
                 if let empire = mapSystem?.empire {
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(empireColor(empire))
+                            .fill(EmpireTheme.color(for: empire))
                             .frame(width: 8, height: 8)
                         Text(empire.capitalized)
                             .font(.caption)
@@ -58,7 +58,7 @@ struct SystemInspectorView: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(empireColor(empire), in: Capsule())
+                                .background(EmpireTheme.color(for: empire), in: Capsule())
                         }
                     }
                 }
@@ -101,27 +101,14 @@ struct SystemInspectorView: View {
 
                     Text(detail.securityStatus)
                         .font(.caption)
-                        .foregroundStyle(detail.securityStatus.contains("Lawless") || detail.securityStatus.contains("no police") ? .red : .green)
+                        .foregroundStyle(detail.securityStatus.isLawless ? .red : .green)
 
                     if !detail.pois.isEmpty {
                         Text("POINTS OF INTEREST")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
 
-                        ForEach(detail.pois) { poi in
-                            HStack(spacing: 6) {
-                                Image(systemName: poi.poiIcon)
-                                    .frame(width: 14)
-                                    .foregroundStyle(.secondary)
-                                    .font(.caption)
-                                Text(poi.name)
-                                    .font(.caption)
-                                Spacer()
-                                Text(poi.type)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+                        PoiListView(pois: detail.pois)
                     }
                 }
             }
@@ -129,14 +116,4 @@ struct SystemInspectorView: View {
         }
     }
 
-    private func empireColor(_ empire: String) -> Color {
-        switch empire.lowercased() {
-        case "solarian": return Color(red: 0.29, green: 0.56, blue: 0.85)
-        case "voidborn": return Color(red: 0, green: 1, blue: 1)
-        case "crimson": return Color(red: 0.86, green: 0.08, blue: 0.24)
-        case "nebula": return Color(red: 1, green: 0.84, blue: 0)
-        case "outerrim": return Color(red: 0.25, green: 0.41, blue: 0.88)
-        default: return .gray
-        }
-    }
 }

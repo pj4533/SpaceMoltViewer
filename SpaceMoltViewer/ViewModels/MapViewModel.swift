@@ -3,14 +3,14 @@ import CoreGraphics
 import OSLog
 import Observation
 
-@Observable
+@MainActor @Observable
 class MapViewModel {
     let gameStateManager: GameStateManager
-    weak var appViewModel: AppViewModel?
+    var onFocusChange: ((InspectorFocus) -> Void)?
 
     var scale: CGFloat = 1.0
     var offset: CGSize = .zero
-    var selectedSystemId: String?
+    private(set) var selectedSystemId: String?
 
     // Coordinate ranges from plan
     private let minX: Double = -6950
@@ -18,9 +18,8 @@ class MapViewModel {
     private let minY: Double = -7600
     private let maxY: Double = 6370
 
-    init(gameStateManager: GameStateManager, appViewModel: AppViewModel? = nil) {
+    init(gameStateManager: GameStateManager) {
         self.gameStateManager = gameStateManager
-        self.appViewModel = appViewModel
         SMLog.map.debug("MapViewModel initialized")
     }
 
@@ -66,10 +65,10 @@ class MapViewModel {
         selectedSystemId = id
         if let id {
             SMLog.map.debug("Selected system: \(id)")
-            appViewModel?.inspectorFocus = .systemDetail(id)
+            onFocusChange?(.systemDetail(id))
         } else {
             SMLog.map.debug("Deselected system")
-            appViewModel?.inspectorFocus = .none
+            onFocusChange?(.none)
         }
     }
 
