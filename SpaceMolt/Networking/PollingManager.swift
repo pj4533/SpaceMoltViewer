@@ -92,6 +92,27 @@ class PollingManager {
         await pollLowFrequency()
     }
 
+    func refreshChat(channel: String) async {
+        SMLog.polling.debug("Refreshing chat for channel: \(channel)")
+        do {
+            let response = try await gameAPI.getChatHistory(channel: channel)
+            chatMessages = response
+            SMLog.polling.debug("Chat refreshed: \(response.messages.count) messages")
+        } catch {
+            SMLog.polling.error("Failed to refresh chat: \(error.localizedDescription)")
+        }
+    }
+
+    func refreshCaptainsLog() async {
+        SMLog.polling.debug("Refreshing captain's log")
+        do {
+            captainsLog = try await gameAPI.getCaptainsLog()
+            SMLog.polling.debug("Captain's log refreshed: \(self.captainsLog?.entries.count ?? 0) entries")
+        } catch {
+            SMLog.polling.error("Failed to refresh captain's log: \(error.localizedDescription)")
+        }
+    }
+
     private func loadOnce() {
         SMLog.polling.info("Loading one-time data (public map, captain's log)")
         Task {

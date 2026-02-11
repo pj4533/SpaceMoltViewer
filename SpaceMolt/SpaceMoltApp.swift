@@ -6,8 +6,19 @@ struct SpaceMoltApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView(appViewModel: appViewModel)
-                .frame(minWidth: 900, minHeight: 600)
+            HubView(appViewModel: appViewModel)
+                .frame(minWidth: 1100, minHeight: 700)
+        }
+
+        Settings {
+            if let settingsVM = appViewModel.settingsViewModel {
+                SettingsView(
+                    viewModel: settingsVM,
+                    onConnect: { appViewModel.onConnect() },
+                    onDisconnect: { appViewModel.onDisconnect() }
+                )
+                .frame(width: 450, height: 350)
+            }
         }
     }
 }

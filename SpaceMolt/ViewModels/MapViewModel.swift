@@ -6,6 +6,7 @@ import Observation
 @Observable
 class MapViewModel {
     let pollingManager: PollingManager
+    weak var appViewModel: AppViewModel?
 
     var scale: CGFloat = 1.0
     var offset: CGSize = .zero
@@ -17,8 +18,9 @@ class MapViewModel {
     private let minY: Double = -7600
     private let maxY: Double = 6370
 
-    init(pollingManager: PollingManager) {
+    init(pollingManager: PollingManager, appViewModel: AppViewModel? = nil) {
         self.pollingManager = pollingManager
+        self.appViewModel = appViewModel
         SMLog.map.debug("MapViewModel initialized")
     }
 
@@ -62,8 +64,10 @@ class MapViewModel {
         selectedSystemId = id
         if let id {
             SMLog.map.debug("Selected system: \(id)")
+            appViewModel?.inspectorFocus = .systemDetail(id)
         } else {
             SMLog.map.debug("Deselected system")
+            appViewModel?.inspectorFocus = .none
         }
     }
 

@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ShipStatsView: View {
     let detail: ShipDetailResponse
-    let viewModel: ShipViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {

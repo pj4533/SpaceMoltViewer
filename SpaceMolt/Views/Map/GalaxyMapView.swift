@@ -4,7 +4,7 @@ struct GalaxyMapView: View {
     @Bindable var viewModel: MapViewModel
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack {
             if viewModel.systems.isEmpty {
                 EmptyStateView(
                     icon: "map",
@@ -38,19 +38,71 @@ struct GalaxyMapView: View {
                 }
             }
 
-            VStack(spacing: 8) {
-                MapControlsView(viewModel: viewModel)
-                if let selected = viewModel.selectedSystem {
-                    SystemDetailPopover(
-                        system: selected,
-                        isCurrent: viewModel.isCurrent(selected),
-                        isVisited: viewModel.isVisited(selected)
-                    )
+            // Top-left: current system label
+            VStack {
+                HStack {
+                    if let current = viewModel.currentSystem {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(.green)
+                                .frame(width: 8, height: 8)
+                            Text(current)
+                                .font(.caption.bold())
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+                    }
+                    Spacer()
+                }
+                Spacer()
+            }
+            .padding(8)
+
+            // Top-right: controls
+            VStack {
+                HStack {
+                    Spacer()
+                    MapControlsView(viewModel: viewModel)
+                }
+                Spacer()
+            }
+            .padding(8)
+
+            // Bottom-left: empire legend
+            VStack {
+                Spacer()
+                HStack {
+                    empireLegend
+                    Spacer()
                 }
             }
-            .padding()
+            .padding(8)
         }
-        .navigationTitle("Galaxy Map")
+    }
+
+    private var empireLegend: some View {
+        HStack(spacing: 10) {
+            legendDot(color: .purple, label: "Nebula")
+            legendDot(color: .yellow, label: "Solar")
+            legendDot(color: .cyan, label: "Void")
+            legendDot(color: .green, label: "Terra")
+            legendDot(color: .gray, label: "Neutral")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func legendDot(color: Color, label: String) -> some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func drawConnections(context: GraphicsContext, size: CGSize) {

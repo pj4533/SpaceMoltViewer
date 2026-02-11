@@ -35,17 +35,51 @@ The game server uses **MCP (Model Context Protocol)** over HTTPS with JSON-RPC 2
   - **Medium frequency (30s):** `get_system`, `get_nearby`, `get_active_missions`, `get_drones`, `get_chat_history`
   - **Low frequency (60s):** `get_ship`, `get_skills`, `list_ships`, `view_orders`
   - **One-time on connect:** public galaxy map, captain's log
+  - Also exposes `refreshChat(channel:)` and `refreshCaptainsLog()` for on-demand refreshes.
 
 There is also an unauthenticated REST endpoint at `GET https://game.spacemolt.com/api/map` for the galaxy map.
 
 ### App & ViewModel Layer
 
-- **`AppViewModel`** — Root `@Observable` object. Owns `SessionManager`, creates `GameAPI` and `PollingManager` on connect. Handles auto-connect from Keychain on launch.
-- **Per-tab ViewModels** (`DashboardViewModel`, `ShipViewModel`, `MapViewModel`, `SkillsViewModel`, `MissionsViewModel`, `SocialViewModel`, `LogViewModel`, `SettingsViewModel`) — Each takes `PollingManager` and exposes computed properties from polled data. Created fresh by `ContentView` when switching tabs.
+- **`AppViewModel`** — Root `@Observable` object. Owns `SessionManager`, creates `GameAPI`, `PollingManager`, and `MapViewModel` on connect. Holds `inspectorFocus: InspectorFocus` that drives the right inspector panel. Handles auto-connect from Keychain on launch.
+- **`MapViewModel`** — Persistent map state (scale, offset, selection). Holds weak reference to `AppViewModel` to set `inspectorFocus` on system selection.
+- **`SettingsViewModel`** — Authentication and credentials management, used in Settings scene.
+- **`InspectorFocus`** enum (`State/InspectorFocus.swift`) — Drives right panel: `.none`, `.systemDetail(String)`, `.shipDetail`, `.missionDetail(String)`, `.skillsOverview`, `.cargoDetail`, `.nearbyDetail`.
 
-### View Layer
+### View Layer — Hub Layout
 
-Uses `NavigationSplitView` with a sidebar (`SidebarTab` enum) and detail views. Tabs: Dashboard, Ship, Galaxy Map, Skills, Missions, Social, Captain's Log, Settings. Views show "Not Connected" placeholder when `pollingManager` is nil.
+Uses a persistent multi-pane "command center" layout (no sidebar/tab navigation):
+
+```
++-------------------------------------------------------------------+
+|  Toolbar (connection status, polling indicator)                   |
++-------------------+---------------------------+-------------------+
+|   LEFT PANEL      |      CENTER PANE          |   RIGHT PANEL     |
+|   StatusPanel     |      Galaxy Map           |   Inspector       |
+|   (~240px)        |      (flexible fill)      |   (~280px)        |
+|                   |                           |                   |
+|   PlayerIdentity  |      Canvas map with      |   Context-driven  |
+|   Location        |      zoom/pan/click       |   detail panel    |
+|   ShipVitals      |                           |   (InspectorFocus)|
+|   Nearby          |      Empire legend        |                   |
+|   Missions        |      Map controls         |                   |
+|   Cargo           |      Current system label |                   |
+|   Skills          |                           |                   |
+|   Connection      |                           |                   |
++-------------------+---------------------------+-------------------+
+|  BOTTOM BAR: Chat | Captain's Log | Alerts     (~150px)          |
++-------------------------------------------------------------------+
+```
+
+- **`HubView`** — Root view. Shows `ConnectedHubView` when connected, login prompt otherwise.
+- **`ConnectedHubView`** — HSplitView/VSplitView skeleton composing all panels.
+- **Left Panel** (`Views/StatusPanel/`): `StatusPanelView` composing compact widgets — `PlayerIdentityCompact`, `LocationCompact`, `ShipVitalsCompact`, `NearbyCompact`, `MissionsCompact`, `CargoCompact`, `ConnectionStatusCompact`. Each tappable widget sets `inspectorFocus`.
+- **Center** (`Views/Map/`): `GalaxyMapView` with `MapControlsView`, empire legend, current system label. System taps set `inspectorFocus`.
+- **Right Panel** (`Views/Inspector/`): `InspectorPanelView` switches on `InspectorFocus` to show `SystemInspectorView`, `ShipInspectorView`, `MissionInspectorView`, `SkillsInspectorView`, `CargoInspectorView`, `NearbyInspectorView`, or `InspectorEmptyView`.
+- **Bottom Bar** (`Views/ActivityBar/`): `ActivityBarView` with tab strip for `ChatFeedView`, `LogFeedView`, `AlertsFeedView`.
+- **Settings** available via Cmd+, (macOS Settings scene).
+
+Minimum window size: 1100x700. Dark mode forced.
 
 ### Services
 
@@ -54,12 +88,25 @@ Uses `NavigationSplitView` with a sidebar (`SidebarTab` enum) and detail views. 
 
 ### Models
 
-All model structs are `Decodable` + `Sendable` with explicit `CodingKeys` mapping `snake_case` JSON to `camelCase` Swift properties.
+All model structs are `Decodable` + `Sendable` with explicit `CodingKeys` mapping `snake_case` JSON to `camelCase` Swift properties. `ShipOverview` has computed percent properties (`hullPercent`, `shieldPercent`, `fuelPercent`, `cargoPercent`).
+
+### Shared Components
+
+- `Views/Shared/GaugeRow.swift` — Reusable progress bar with label/value
+- `Views/Shared/StatLabel.swift` — Reusable stat display (value + label)
+- `Views/Shared/EmptyStateView.swift` — Placeholder for empty/loading states
+- `Views/Shared/ConnectionIndicator.swift` — Colored dot + status text
+
+### Reusable Sub-views (kept from original)
+
+- `SkillRowView`, `MissionRowView`, `ModuleListView`, `ShipStatsView` — Used by inspector views
+- `ChatChannelView`, `ChatMessageRow`, `LogEntryView` — Used by activity bar feeds
 
 ## Key Conventions
 
 - **Observation framework**: Uses `@Observable` (not Combine/ObservableObject). ViewModels are classes marked `@Observable`, views use `@Bindable` or direct property access.
 - **Safety-first networking**: `GameAPI.allowedTools` whitelist prevents accidental mutation calls. Never add mutation tools to this list.
+- **Progressive disclosure**: Compact widgets in left panel are tappable → sets `inspectorFocus` → right panel shows detail. No popovers, no sheets, no navigation stacks. One consistent pattern.
 - **Logging**: Use `SMLog.<category>` throughout. Available categories defined in `Services/Logger.swift`.
 - **Bundle ID**: `com.saygoodnight.SpaceMolt`
 

@@ -123,4 +123,24 @@ struct ShipOverview: Decodable, Sendable {
         case powerUsed = "power_used"
         case powerMax = "power_capacity"
     }
+
+    var hullPercent: Double {
+        guard maxHull > 0 else { return 0 }
+        return Double(hull) / Double(maxHull)
+    }
+
+    var shieldPercent: Double {
+        guard maxShield > 0 else { return 0 }
+        return Double(shield) / Double(maxShield)
+    }
+
+    var fuelPercent: Double {
+        guard maxFuel > 0 else { return 0 }
+        return Double(fuel) / Double(maxFuel)
+    }
+
+    var cargoPercent: Double {
+        guard cargoCapacity > 0 else { return 0 }
+        return Double(cargoUsed) / Double(cargoCapacity)
+    }
 }

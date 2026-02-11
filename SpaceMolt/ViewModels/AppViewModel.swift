@@ -8,6 +8,8 @@ class AppViewModel {
     var gameAPI: GameAPI?
     var pollingManager: PollingManager?
     var settingsViewModel: SettingsViewModel?
+    var mapViewModel: MapViewModel?
+    var inspectorFocus: InspectorFocus = .none
 
     init() {
         SMLog.general.info("AppViewModel initialized")
@@ -20,6 +22,7 @@ class AppViewModel {
         gameAPI = api
         let polling = PollingManager(gameAPI: api)
         pollingManager = polling
+        mapViewModel = MapViewModel(pollingManager: polling, appViewModel: self)
         polling.startPolling()
         SMLog.general.info("onConnect: polling started")
     }
@@ -29,6 +32,8 @@ class AppViewModel {
         pollingManager?.stopPolling()
         pollingManager = nil
         gameAPI = nil
+        mapViewModel = nil
+        inspectorFocus = .none
         sessionManager.disconnect()
         SMLog.general.info("onDisconnect: complete")
     }
