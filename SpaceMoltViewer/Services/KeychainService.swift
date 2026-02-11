@@ -7,7 +7,7 @@ enum KeychainError: Error {
 }
 
 struct KeychainService {
-    private static let service = "com.saygoodnight.SpaceMolt"
+    private static let service = "com.saygoodnight.SpaceMoltViewer"
     private static let account = "credentials"
 
     struct Credentials: Codable, Sendable {

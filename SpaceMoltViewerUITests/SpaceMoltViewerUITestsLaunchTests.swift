@@ -1,13 +1,13 @@
 //
-//  SpaceMoltUITestsLaunchTests.swift
-//  SpaceMoltUITests
+//  SpaceMoltViewerUITestsLaunchTests.swift
+//  SpaceMoltViewerUITests
 //
 //  Created by PJ Gray on 2/11/26.
 //
 
 import XCTest
 
-final class SpaceMoltUITestsLaunchTests: XCTestCase {
+final class SpaceMoltViewerUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

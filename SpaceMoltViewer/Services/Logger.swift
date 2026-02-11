@@ -1,10 +1,10 @@
 import Foundation
 import OSLog
 
-/// Centralized logging system for SpaceMolt
+/// Centralized logging system for SpaceMoltViewer
 /// Usage: SMLog.network.info("Message")
 public enum SMLog {
-    private static let subsystem = "com.saygoodnight.SpaceMolt"
+    private static let subsystem = "com.saygoodnight.SpaceMoltViewer"
 
     public static let general = Logger(subsystem: subsystem, category: "General")
     public static let network = Logger(subsystem: subsystem, category: "Network")

@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct SpaceMoltApp: App {
+struct SpaceMoltViewerApp: App {
     @State private var appViewModel = AppViewModel()
 
     var body: some Scene {

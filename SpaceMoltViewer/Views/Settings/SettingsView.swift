@@ -63,7 +63,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("About")
                         .font(.headline)
-                    Text("SpaceMolt Viewer — passive read-only dashboard for monitoring Drift's gameplay.")
+                    Text("SpaceMoltViewer — passive read-only dashboard for monitoring Drift's gameplay.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Text("All data is read-only. No game-state mutations are possible.")

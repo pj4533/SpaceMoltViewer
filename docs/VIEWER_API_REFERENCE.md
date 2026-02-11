@@ -1,4 +1,4 @@
-# SpaceMolt Viewer — API Reference & Source of Truth
+# SpaceMoltViewer — API Reference & Source of Truth
 
 > Everything needed to build a read-only viewer utility for the SpaceMolt AI agent MMO.
 > This document distills the DriftBot game docs and OpenAPI spec into viewer-relevant information only.

@@ -12,37 +12,37 @@
 			containerPortal = B0C2077D2F3D054700F1761B /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = B0C207842F3D054700F1761B;
-			remoteInfo = SpaceMolt;
+			remoteInfo = SpaceMoltViewer;
 		};
 		B0C2079D2F3D054800F1761B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B0C2077D2F3D054700F1761B /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = B0C207842F3D054700F1761B;
-			remoteInfo = SpaceMolt;
+			remoteInfo = SpaceMoltViewer;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		B0C207852F3D054700F1761B /* SpaceMolt.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpaceMolt.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B0C207922F3D054800F1761B /* SpaceMoltTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpaceMoltTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B0C2079C2F3D054800F1761B /* SpaceMoltUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpaceMoltUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0C207852F3D054700F1761B /* SpaceMoltViewer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpaceMoltViewer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0C207922F3D054800F1761B /* SpaceMoltViewerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpaceMoltViewerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0C2079C2F3D054800F1761B /* SpaceMoltViewerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpaceMoltViewerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		B0C207872F3D054700F1761B /* SpaceMolt */ = {
+		B0C207872F3D054700F1761B /* SpaceMoltViewer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SpaceMolt;
+			path = SpaceMoltViewer;
 			sourceTree = "<group>";
 		};
-		B0C207952F3D054800F1761B /* SpaceMoltTests */ = {
+		B0C207952F3D054800F1761B /* SpaceMoltViewerTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SpaceMoltTests;
+			path = SpaceMoltViewerTests;
 			sourceTree = "<group>";
 		};
-		B0C2079F2F3D054800F1761B /* SpaceMoltUITests */ = {
+		B0C2079F2F3D054800F1761B /* SpaceMoltViewerUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SpaceMoltUITests;
+			path = SpaceMoltViewerUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,9 +75,9 @@
 		B0C2077C2F3D054700F1761B = {
 			isa = PBXGroup;
 			children = (
-				B0C207872F3D054700F1761B /* SpaceMolt */,
-				B0C207952F3D054800F1761B /* SpaceMoltTests */,
-				B0C2079F2F3D054800F1761B /* SpaceMoltUITests */,
+				B0C207872F3D054700F1761B /* SpaceMoltViewer */,
+				B0C207952F3D054800F1761B /* SpaceMoltViewerTests */,
+				B0C2079F2F3D054800F1761B /* SpaceMoltViewerUITests */,
 				B0C207862F3D054700F1761B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -85,9 +85,9 @@
 		B0C207862F3D054700F1761B /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B0C207852F3D054700F1761B /* SpaceMolt.app */,
-				B0C207922F3D054800F1761B /* SpaceMoltTests.xctest */,
-				B0C2079C2F3D054800F1761B /* SpaceMoltUITests.xctest */,
+				B0C207852F3D054700F1761B /* SpaceMoltViewer.app */,
+				B0C207922F3D054800F1761B /* SpaceMoltViewerTests.xctest */,
+				B0C2079C2F3D054800F1761B /* SpaceMoltViewerUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		B0C207842F3D054700F1761B /* SpaceMolt */ = {
+		B0C207842F3D054700F1761B /* SpaceMoltViewer */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B0C207A62F3D054800F1761B /* Build configuration list for PBXNativeTarget "SpaceMolt" */;
+			buildConfigurationList = B0C207A62F3D054800F1761B /* Build configuration list for PBXNativeTarget "SpaceMoltViewer" */;
 			buildPhases = (
 				B0C207812F3D054700F1761B /* Sources */,
 				B0C207822F3D054700F1761B /* Frameworks */,
@@ -108,18 +108,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				B0C207872F3D054700F1761B /* SpaceMolt */,
+				B0C207872F3D054700F1761B /* SpaceMoltViewer */,
 			);
-			name = SpaceMolt;
+			name = SpaceMoltViewer;
 			packageProductDependencies = (
 			);
-			productName = SpaceMolt;
-			productReference = B0C207852F3D054700F1761B /* SpaceMolt.app */;
+			productName = SpaceMoltViewer;
+			productReference = B0C207852F3D054700F1761B /* SpaceMoltViewer.app */;
 			productType = "com.apple.product-type.application";
 		};
-		B0C207912F3D054800F1761B /* SpaceMoltTests */ = {
+		B0C207912F3D054800F1761B /* SpaceMoltViewerTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B0C207A92F3D054800F1761B /* Build configuration list for PBXNativeTarget "SpaceMoltTests" */;
+			buildConfigurationList = B0C207A92F3D054800F1761B /* Build configuration list for PBXNativeTarget "SpaceMoltViewerTests" */;
 			buildPhases = (
 				B0C2078E2F3D054800F1761B /* Sources */,
 				B0C2078F2F3D054800F1761B /* Frameworks */,
@@ -131,18 +131,18 @@
 				B0C207942F3D054800F1761B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				B0C207952F3D054800F1761B /* SpaceMoltTests */,
+				B0C207952F3D054800F1761B /* SpaceMoltViewerTests */,
 			);
-			name = SpaceMoltTests;
+			name = SpaceMoltViewerTests;
 			packageProductDependencies = (
 			);
-			productName = SpaceMoltTests;
-			productReference = B0C207922F3D054800F1761B /* SpaceMoltTests.xctest */;
+			productName = SpaceMoltViewerTests;
+			productReference = B0C207922F3D054800F1761B /* SpaceMoltViewerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		B0C2079B2F3D054800F1761B /* SpaceMoltUITests */ = {
+		B0C2079B2F3D054800F1761B /* SpaceMoltViewerUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B0C207AC2F3D054800F1761B /* Build configuration list for PBXNativeTarget "SpaceMoltUITests" */;
+			buildConfigurationList = B0C207AC2F3D054800F1761B /* Build configuration list for PBXNativeTarget "SpaceMoltViewerUITests" */;
 			buildPhases = (
 				B0C207982F3D054800F1761B /* Sources */,
 				B0C207992F3D054800F1761B /* Frameworks */,
@@ -154,13 +154,13 @@
 				B0C2079E2F3D054800F1761B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				B0C2079F2F3D054800F1761B /* SpaceMoltUITests */,
+				B0C2079F2F3D054800F1761B /* SpaceMoltViewerUITests */,
 			);
-			name = SpaceMoltUITests;
+			name = SpaceMoltViewerUITests;
 			packageProductDependencies = (
 			);
-			productName = SpaceMoltUITests;
-			productReference = B0C2079C2F3D054800F1761B /* SpaceMoltUITests.xctest */;
+			productName = SpaceMoltViewerUITests;
+			productReference = B0C2079C2F3D054800F1761B /* SpaceMoltViewerUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -186,7 +186,7 @@
 					};
 				};
 			};
-			buildConfigurationList = B0C207802F3D054700F1761B /* Build configuration list for PBXProject "SpaceMolt" */;
+			buildConfigurationList = B0C207802F3D054700F1761B /* Build configuration list for PBXProject "SpaceMoltViewer" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -200,9 +200,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B0C207842F3D054700F1761B /* SpaceMolt */,
-				B0C207912F3D054800F1761B /* SpaceMoltTests */,
-				B0C2079B2F3D054800F1761B /* SpaceMoltUITests */,
+				B0C207842F3D054700F1761B /* SpaceMoltViewer */,
+				B0C207912F3D054800F1761B /* SpaceMoltViewerTests */,
+				B0C2079B2F3D054800F1761B /* SpaceMoltViewerUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -258,12 +258,12 @@
 /* Begin PBXTargetDependency section */
 		B0C207942F3D054800F1761B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = B0C207842F3D054700F1761B /* SpaceMolt */;
+			target = B0C207842F3D054700F1761B /* SpaceMoltViewer */;
 			targetProxy = B0C207932F3D054800F1761B /* PBXContainerItemProxy */;
 		};
 		B0C2079E2F3D054800F1761B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = B0C207842F3D054700F1761B /* SpaceMolt */;
+			target = B0C207842F3D054700F1761B /* SpaceMoltViewer */;
 			targetProxy = B0C2079D2F3D054800F1761B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -419,7 +419,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.saygoodnight.SpaceMolt;
+				PRODUCT_BUNDLE_IDENTIFIER = com.saygoodnight.SpaceMoltViewer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -461,7 +461,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.saygoodnight.SpaceMolt;
+				PRODUCT_BUNDLE_IDENTIFIER = com.saygoodnight.SpaceMoltViewer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -483,14 +483,14 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.saygoodnight.SpaceMoltTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.saygoodnight.SpaceMoltViewerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SpaceMolt.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SpaceMolt";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SpaceMoltViewer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SpaceMoltViewer";
 			};
 			name = Debug;
 		};
@@ -504,14 +504,14 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.saygoodnight.SpaceMoltTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.saygoodnight.SpaceMoltViewerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SpaceMolt.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SpaceMolt";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SpaceMoltViewer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SpaceMoltViewer";
 			};
 			name = Release;
 		};
@@ -523,14 +523,14 @@
 				DEVELOPMENT_TEAM = U3FNBSFU75;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.saygoodnight.SpaceMoltUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.saygoodnight.SpaceMoltViewerUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = SpaceMolt;
+				TEST_TARGET_NAME = SpaceMoltViewer;
 			};
 			name = Debug;
 		};
@@ -542,21 +542,21 @@
 				DEVELOPMENT_TEAM = U3FNBSFU75;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.saygoodnight.SpaceMoltUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.saygoodnight.SpaceMoltViewerUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = SpaceMolt;
+				TEST_TARGET_NAME = SpaceMoltViewer;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		B0C207802F3D054700F1761B /* Build configuration list for PBXProject "SpaceMolt" */ = {
+		B0C207802F3D054700F1761B /* Build configuration list for PBXProject "SpaceMoltViewer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B0C207A42F3D054800F1761B /* Debug */,
@@ -565,7 +565,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B0C207A62F3D054800F1761B /* Build configuration list for PBXNativeTarget "SpaceMolt" */ = {
+		B0C207A62F3D054800F1761B /* Build configuration list for PBXNativeTarget "SpaceMoltViewer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B0C207A72F3D054800F1761B /* Debug */,
@@ -574,7 +574,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B0C207A92F3D054800F1761B /* Build configuration list for PBXNativeTarget "SpaceMoltTests" */ = {
+		B0C207A92F3D054800F1761B /* Build configuration list for PBXNativeTarget "SpaceMoltViewerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B0C207AA2F3D054800F1761B /* Debug */,
@@ -583,7 +583,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B0C207AC2F3D054800F1761B /* Build configuration list for PBXNativeTarget "SpaceMoltUITests" */ = {
+		B0C207AC2F3D054800F1761B /* Build configuration list for PBXNativeTarget "SpaceMoltViewerUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B0C207AD2F3D054800F1761B /* Debug */,

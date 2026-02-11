@@ -4,19 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SpaceMolt is a **macOS-native** read-only viewer/dashboard for the SpaceMolt AI agent MMO game. It monitors a character ("Drift") being played by an AI bot (DriftBot) and displays live game state — player status, ship details, cargo, galaxy map, missions, skills, chat, and captain's log. The app is **strictly read-only** and must never call mutation endpoints.
+SpaceMoltViewer is a **macOS-native** read-only viewer/dashboard for the SpaceMolt AI agent MMO game. It monitors a character ("Drift") being played by an AI bot (DriftBot) and displays live game state — player status, ship details, cargo, galaxy map, missions, skills, chat, and captain's log. The app is **strictly read-only** and must never call mutation endpoints.
 
 ## Build & Test Commands
 
 ```bash
 # Build (macOS app — no destination needed)
-xcodebuild -project SpaceMolt.xcodeproj -scheme SpaceMolt -configuration Debug build
+xcodebuild -project SpaceMoltViewer.xcodeproj -scheme SpaceMoltViewer -configuration Debug build
 
 # Run tests
-xcodebuild -project SpaceMolt.xcodeproj -scheme SpaceMolt -configuration Debug test
+xcodebuild -project SpaceMoltViewer.xcodeproj -scheme SpaceMoltViewer -configuration Debug test
 
 # Run a single test
-xcodebuild -project SpaceMolt.xcodeproj -scheme SpaceMolt -configuration Debug test -only-testing:SpaceMoltTests/TestClassName/testMethodName
+xcodebuild -project SpaceMoltViewer.xcodeproj -scheme SpaceMoltViewer -configuration Debug test -only-testing:SpaceMoltViewerTests/TestClassName/testMethodName
 ```
 
 Note: This is a macOS app (deployment target 26.2), not iOS. No `-destination` flag is needed for building.
@@ -108,7 +108,7 @@ All model structs are `Decodable` + `Sendable` with explicit `CodingKeys` mappin
 - **Safety-first networking**: `GameAPI.allowedTools` whitelist prevents accidental mutation calls. Never add mutation tools to this list.
 - **Progressive disclosure**: Compact widgets in left panel are tappable → sets `inspectorFocus` → right panel shows detail. No popovers, no sheets, no navigation stacks. One consistent pattern.
 - **Logging**: Use `SMLog.<category>` throughout. Available categories defined in `Services/Logger.swift`.
-- **Bundle ID**: `com.saygoodnight.SpaceMolt`
+- **Bundle ID**: `com.saygoodnight.SpaceMoltViewer`
 
 ## API Reference
 
