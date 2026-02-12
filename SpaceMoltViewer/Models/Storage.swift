@@ -3,17 +3,18 @@ import Foundation
 struct StorageResponse: Decodable, Sendable {
     let credits: Int
     let items: [StorageItem]
-    let stationId: String
-    let stationName: String?
+    let locationId: String
+    let locationName: String?
 
     enum CodingKeys: String, CodingKey {
         case credits, items
-        case stationId = "station_id"
-        case stationName = "station_name"
+        // API sends "base_id" but docs said "station_id" — accept either
+        case locationId = "base_id"
+        case locationName = "station_name"
     }
 
     var displayName: String {
-        stationName ?? stationId
+        locationName ?? locationId
             .replacingOccurrences(of: "_", with: " ")
             .capitalized
     }

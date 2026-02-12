@@ -112,6 +112,18 @@ class GameStateManager {
         async let os: () = refreshOwnedShips(force: true)
         _ = await (s, c, n, sk, m, ch, cl, st, sh, os)
         SMLog.api.info("Initial data loading complete")
+
+        // Retry any data that failed during initial load (MCP session race)
+        try? await Task.sleep(for: .seconds(2))
+        guard !Task.isCancelled else { return }
+        var retried: [String] = []
+        if shipDetail == nil { retried.append("get_ship"); await refreshShip(force: true) }
+        if captainsLog == nil { retried.append("captains_log"); await refreshCaptainsLog() }
+        if skills == nil { retried.append("get_skills"); await refreshSkills(force: true) }
+        if system == nil { retried.append("get_system"); await refreshSystem(force: true) }
+        if !retried.isEmpty {
+            SMLog.api.info("Retried failed initial loads: \(retried.joined(separator: ", "))")
+        }
     }
 
     // MARK: - WebSocket Push Event Processing
@@ -183,6 +195,11 @@ class GameStateManager {
             }
         } else {
             storage = nil
+        }
+
+        // Retry ship detail if initial load failed
+        if shipDetail == nil {
+            Task { await refreshShip() }
         }
 
         lastError = nil
