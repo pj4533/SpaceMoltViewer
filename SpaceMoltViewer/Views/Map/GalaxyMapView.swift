@@ -259,9 +259,12 @@ struct GalaxyMapView: View {
     // MARK: - Tap Handling
 
     private func handleTap(at location: CGPoint, in size: CGSize) {
+        // scaleEffect scales around center, so we must account for that anchor
+        let centerX = size.width / 2
+        let centerY = size.height / 2
         let adjustedLocation = CGPoint(
-            x: (location.x - viewModel.offset.width) / viewModel.scale,
-            y: (location.y - viewModel.offset.height) / viewModel.scale
+            x: (location.x - viewModel.offset.width - centerX) / viewModel.scale + centerX,
+            y: (location.y - viewModel.offset.height - centerY) / viewModel.scale + centerY
         )
 
         var closest: MapSystem?
