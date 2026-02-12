@@ -115,8 +115,26 @@ struct GameAPI {
 
     // MARK: - On Demand
 
+    func getCaptainsLogPage(index: Int = 0) async throws -> CaptainsLogPageResponse {
+        try await call(tool: "captains_log_list", extraArgs: ["index": index])
+    }
+
     func getCaptainsLog() async throws -> CaptainsLogResponse {
-        try await call(tool: "captains_log_list")
+        // Fetch first page to get total count
+        let first = try await getCaptainsLogPage(index: 0)
+        var entries = [first.entry]
+
+        // Fetch remaining entries
+        for i in 1..<min(first.totalCount, first.maxEntries) {
+            let page = try await getCaptainsLogPage(index: i)
+            entries.append(page.entry)
+        }
+
+        return CaptainsLogResponse(
+            entries: entries,
+            totalCount: first.totalCount,
+            maxEntries: first.maxEntries
+        )
     }
 
     // MARK: - Public API (no auth needed)
