@@ -158,7 +158,9 @@ class GameStateManager {
         case "tick":
             break
         default:
-            appendEvent(category: .info, title: message.type, detail: nil, rawType: message.type)
+            let preview = String(data: message.payloadData.prefix(500), encoding: .utf8) ?? "(non-UTF8)"
+            SMLog.websocket.warning("Unhandled WS event type: '\(message.type)' payload: \(preview)")
+            appendEvent(category: .info, title: message.type, detail: preview, rawType: message.type)
         }
     }
 
