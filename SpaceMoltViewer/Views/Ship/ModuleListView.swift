@@ -26,12 +26,14 @@ struct ModuleListView: View {
                             HStack(spacing: 12) {
                                 Text("CPU: \(module.cpuUsage)")
                                 Text("Power: \(module.powerUsage)")
-                                if let mp = module.miningPower {
-                                    Text("Mining: \(mp)")
-                                }
                             }
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                            if let stats = module.statSummary {
+                                Text(stats)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
 
                         Spacer()

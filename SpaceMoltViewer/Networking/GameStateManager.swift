@@ -39,6 +39,18 @@ class GameStateManager {
     private var previousSystem: String?
     private static let maxEvents = 200
 
+    // Throttling: track last refresh time per query type
+    private var lastRefreshTime: [String: Date] = [:]
+    private static let throttleIntervals: [String: TimeInterval] = [
+        "get_skills": 10,
+        "get_nearby": 5,
+        "get_cargo": 5,
+        "get_system": 5,
+        "view_storage": 10,
+        "get_ship": 10,
+        "list_ships": 30,
+    ]
+
     init(webSocketClient: WebSocketClient, gameAPI: GameAPI) {
         self.webSocketClient = webSocketClient
         self.gameAPI = gameAPI
@@ -88,16 +100,16 @@ class GameStateManager {
 
     private func loadInitialData() async {
         SMLog.api.info("Loading initial data via MCP API...")
-        async let s: () = refreshSystem()
-        async let c: () = refreshCargo()
-        async let n: () = refreshNearby()
-        async let sk: () = refreshSkills()
+        async let s: () = refreshSystem(force: true)
+        async let c: () = refreshCargo(force: true)
+        async let n: () = refreshNearby(force: true)
+        async let sk: () = refreshSkills(force: true)
         async let m: () = refreshMissions()
         async let ch: () = refreshChat(channel: "system")
         async let cl: () = refreshCaptainsLog()
-        async let st: () = refreshStorage()
-        async let sh: () = refreshShip()
-        async let os: () = refreshOwnedShips()
+        async let st: () = refreshStorage(force: true)
+        async let sh: () = refreshShip(force: true)
+        async let os: () = refreshOwnedShips(force: true)
         _ = await (s, c, n, sk, m, ch, cl, st, sh, os)
         SMLog.api.info("Initial data loading complete")
     }
@@ -329,9 +341,24 @@ class GameStateManager {
         }
     }
 
+    // MARK: - Throttling
+
+    /// Returns true if the refresh should proceed, false if throttled.
+    /// Always allows the call during initial load (when `initialLoadTask` is active).
+    private func shouldRefresh(_ key: String) -> Bool {
+        let interval = Self.throttleIntervals[key] ?? 5
+        if let last = lastRefreshTime[key], Date().timeIntervalSince(last) < interval {
+            SMLog.api.debug("Throttled \(key) (interval: \(interval)s)")
+            return false
+        }
+        lastRefreshTime[key] = Date()
+        return true
+    }
+
     // MARK: - MCP API Data Refreshes
 
-    private func refreshSystem() async {
+    private func refreshSystem(force: Bool = false) async {
+        guard force || shouldRefresh("get_system") else { return }
         do {
             system = try await gameAPI.getSystem()
             SMLog.api.debug("System refreshed: \(self.system?.system.name ?? "?")")
@@ -340,7 +367,8 @@ class GameStateManager {
         }
     }
 
-    private func refreshCargo() async {
+    private func refreshCargo(force: Bool = false) async {
+        guard force || shouldRefresh("get_cargo") else { return }
         do {
             cargo = try await gameAPI.getCargo()
         } catch {
@@ -348,7 +376,8 @@ class GameStateManager {
         }
     }
 
-    private func refreshNearby() async {
+    private func refreshNearby(force: Bool = false) async {
+        guard force || shouldRefresh("get_nearby") else { return }
         do {
             nearby = try await gameAPI.getNearby()
             SMLog.api.debug("Nearby refreshed: \(self.nearby?.count ?? 0) players, \(self.nearby?.pirateCount ?? 0) pirates")
@@ -357,7 +386,8 @@ class GameStateManager {
         }
     }
 
-    private func refreshSkills() async {
+    private func refreshSkills(force: Bool = false) async {
+        guard force || shouldRefresh("get_skills") else { return }
         do {
             skills = try await gameAPI.getSkills()
         } catch {
@@ -390,7 +420,8 @@ class GameStateManager {
         }
     }
 
-    private func refreshStorage() async {
+    private func refreshStorage(force: Bool = false) async {
+        guard force || shouldRefresh("view_storage") else { return }
         do {
             storage = try await gameAPI.viewStorage()
         } catch {
@@ -398,7 +429,8 @@ class GameStateManager {
         }
     }
 
-    private func refreshShip() async {
+    private func refreshShip(force: Bool = false) async {
+        guard force || shouldRefresh("get_ship") else { return }
         do {
             shipDetail = try await gameAPI.getShip()
         } catch {
@@ -406,7 +438,8 @@ class GameStateManager {
         }
     }
 
-    private func refreshOwnedShips() async {
+    private func refreshOwnedShips(force: Bool = false) async {
+        guard force || shouldRefresh("list_ships") else { return }
         do {
             ownedShips = try await gameAPI.listShips()
         } catch {

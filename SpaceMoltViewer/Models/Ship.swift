@@ -24,7 +24,7 @@ struct ShipClass: Decodable, Sendable {
     let price: Int
     let baseHull: Int
     let baseShield: Int
-    let baseShieldRecharge: Int
+    let baseShieldRecharge: Int?
     let baseArmor: Int
     let baseSpeed: Double
     let baseFuel: Int
@@ -34,8 +34,8 @@ struct ShipClass: Decodable, Sendable {
     let weaponSlots: Int
     let defenseSlots: Int
     let utilitySlots: Int
-    let defaultModules: [String]
-    let requiredSkills: [String: Int]
+    let defaultModules: [String]?
+    let requiredSkills: [String: Int]?
 
     enum CodingKeys: String, CodingKey {
         case id, name, description, price
@@ -64,22 +64,58 @@ struct ShipModule: Decodable, Sendable, Identifiable {
     let type: String
     let cpuUsage: Int
     let powerUsage: Int
-    let miningPower: Int?
-    let miningRange: Int?
     let quality: Int
     let qualityGrade: String
     let wear: Int
     let wearStatus: String
 
+    // Module-type-specific stats (all optional)
+    let miningPower: Int?
+    let miningRange: Int?
+    let damage: Int?
+    let fireRate: Double?
+    let range: Int?
+    let shieldBonus: Int?
+    let armorBonus: Int?
+    let speedBonus: Double?
+    let scanPower: Int?
+    let repairPower: Int?
+    let cargoBonusPercent: Int?
+    let fuelEfficiency: Int?
+
     enum CodingKeys: String, CodingKey {
-        case id, name, type, quality, wear
+        case id, name, type, quality, wear, damage, range
         case typeId = "type_id"
         case cpuUsage = "cpu_usage"
         case powerUsage = "power_usage"
-        case miningPower = "mining_power"
-        case miningRange = "mining_range"
         case qualityGrade = "quality_grade"
         case wearStatus = "wear_status"
+        case miningPower = "mining_power"
+        case miningRange = "mining_range"
+        case fireRate = "fire_rate"
+        case shieldBonus = "shield_bonus"
+        case armorBonus = "armor_bonus"
+        case speedBonus = "speed_bonus"
+        case scanPower = "scan_power"
+        case repairPower = "repair_power"
+        case cargoBonusPercent = "cargo_bonus_percent"
+        case fuelEfficiency = "fuel_efficiency"
+    }
+
+    /// Summary of this module's key stat for display
+    var statSummary: String? {
+        var parts: [String] = []
+        if let d = damage { parts.append("Dmg: \(d)") }
+        if let fr = fireRate { parts.append("Rate: \(String(format: "%.1f", fr))") }
+        if let mp = miningPower { parts.append("Mining: \(mp)") }
+        if let mr = miningRange { parts.append("Range: \(mr)") }
+        if let sb = shieldBonus { parts.append("Shield: +\(sb)") }
+        if let ab = armorBonus { parts.append("Armor: +\(ab)") }
+        if let sp = speedBonus { parts.append("Speed: +\(String(format: "%.1f", sp))") }
+        if let sc = scanPower { parts.append("Scan: \(sc)") }
+        if let rp = repairPower { parts.append("Repair: \(rp)") }
+        if let r = range { parts.append("Range: \(r)") }
+        return parts.isEmpty ? nil : parts.joined(separator: "  ")
     }
 }
 
