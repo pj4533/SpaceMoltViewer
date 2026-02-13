@@ -53,69 +53,14 @@ struct GameAPI {
             mcpSessionId: mcpSessionId
         )
 
-        // Build decode attempts:
-        // 1. Direct decode
-        // 2. Round-trip through JSONSerialization (ObjC parser handles floats the Swift parser rejects)
-        // 3. Regex sanitization (truncate excessive decimal precision)
-        var attempts: [(String, Data)] = [("direct", data)]
-
-        if let normalized = Self.normalizeJSON(data) {
-            attempts.append(("normalized", normalized))
+        do {
+            let result = try ResilientDecoder.decode(T.self, from: data)
+            SMLog.api.debug("\(tool) decoded as \(String(describing: T.self))")
+            return result
+        } catch {
+            Self.logDecodeFailure(tool: tool, type: T.self, error: error, data: data)
+            throw error
         }
-
-        let sanitized = Self.sanitizeFloatingPoint(data)
-        if sanitized != data {
-            attempts.append(("sanitized", sanitized))
-        }
-
-        for (index, (label, payload)) in attempts.enumerated() {
-            do {
-                let result = try JSONDecoder().decode(T.self, from: payload)
-                if index > 0 {
-                    SMLog.api.debug("\(tool) decoded as \(String(describing: T.self)) (after \(label))")
-                } else {
-                    SMLog.api.debug("\(tool) decoded successfully as \(String(describing: T.self))")
-                }
-                return result
-            } catch {
-                if index < attempts.count - 1 {
-                    SMLog.decode.debug("\(tool): \(label) decode failed, trying next approach")
-                    continue
-                }
-                // All attempts failed — detailed logging
-                Self.logDecodeFailure(tool: tool, type: T.self, error: error, data: data)
-                throw error
-            }
-        }
-        fatalError("Unreachable")
-    }
-
-    /// Normalize JSON by round-tripping through JSONSerialization (ObjC parser).
-    /// Handles floating-point numbers that Swift's Foundation JSON parser rejects (e.g. "5.29").
-    private static func normalizeJSON(_ data: Data) -> Data? {
-        guard let obj = try? JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed),
-              let normalized = try? JSONSerialization.data(withJSONObject: obj) else {
-            return nil
-        }
-        return normalized
-    }
-
-    /// Reformat floating-point numbers that Swift's JSON parser rejects.
-    /// Some numbers (e.g. 9.49) trigger "not representable in Swift" errors.
-    /// Converting to scientific notation (e.g. 9.49e0) bypasses the parser bug.
-    private static func sanitizeFloatingPoint(_ data: Data) -> Data {
-        guard let json = String(data: data, encoding: .utf8) else { return data }
-        guard let regex = try? NSRegularExpression(pattern: #"-?\d+\.\d+"#) else { return data }
-        let mutable = NSMutableString(string: json)
-        let matches = regex.matches(in: json, range: NSRange(json.startIndex..., in: json))
-        for match in matches.reversed() {
-            let numStr = mutable.substring(with: match.range)
-            if Double(numStr) != nil {
-                // Append e0 to force scientific notation parsing path
-                mutable.replaceCharacters(in: match.range, with: numStr + "e0")
-            }
-        }
-        return (mutable as String).data(using: .utf8) ?? data
     }
 
     /// Log detailed information about a decode failure
@@ -238,7 +183,7 @@ struct GameAPI {
         }
 
         do {
-            let wrapper = try JSONDecoder().decode(PublicMapResponse.self, from: data)
+            let wrapper = try ResilientDecoder.decode(PublicMapResponse.self, from: data)
             SMLog.api.info("Public map decoded: \(wrapper.systems.count) systems")
             return wrapper.systems
         } catch {

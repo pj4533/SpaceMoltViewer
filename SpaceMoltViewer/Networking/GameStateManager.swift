@@ -175,7 +175,7 @@ class GameStateManager {
     }
 
     private func handleStateUpdate(_ data: Data) {
-        guard let update = try? JSONDecoder().decode(StateUpdatePayload.self, from: data) else {
+        guard let update = ResilientDecoder.decodeOrNil(StateUpdatePayload.self, from: data) else {
             SMLog.decode.error("Failed to decode state_update")
             return
         }
@@ -218,7 +218,7 @@ class GameStateManager {
     }
 
     private func handleChatMessage(_ data: Data) {
-        guard let payload = try? JSONDecoder().decode(ChatMessagePayload.self, from: data) else { return }
+        guard let payload = ResilientDecoder.decodeOrNil(ChatMessagePayload.self, from: data) else { return }
 
         let chatMsg = ChatMessage(
             id: payload.id ?? UUID().uuidString,
@@ -246,7 +246,7 @@ class GameStateManager {
     }
 
     private func handleCombatUpdate(_ data: Data) {
-        guard let payload = try? JSONDecoder().decode(CombatUpdatePayload.self, from: data) else { return }
+        guard let payload = ResilientDecoder.decodeOrNil(CombatUpdatePayload.self, from: data) else { return }
         let detail = [
             payload.attacker.map { "Attacker: \($0)" },
             payload.target.map { "Target: \($0)" },
@@ -260,7 +260,7 @@ class GameStateManager {
     }
 
     private func handleMiningYield(_ data: Data) {
-        guard let payload = try? JSONDecoder().decode(MiningYieldPayload.self, from: data) else { return }
+        guard let payload = ResilientDecoder.decodeOrNil(MiningYieldPayload.self, from: data) else { return }
         let resource = payload.resourceId ?? "unknown"
         let qty = payload.quantity ?? 0
         appendEvent(category: .mining, title: "Mined \(qty)x \(resource)", detail: payload.remaining.map { "Remaining: \($0)" }, rawType: "mining_yield")
@@ -269,14 +269,14 @@ class GameStateManager {
     }
 
     private func handleSkillLevelUp(_ data: Data) {
-        guard let payload = try? JSONDecoder().decode(SkillLevelUpPayload.self, from: data) else { return }
+        guard let payload = ResilientDecoder.decodeOrNil(SkillLevelUpPayload.self, from: data) else { return }
         let skill = payload.skillId ?? "unknown"
         let level = payload.newLevel ?? 0
         appendEvent(category: .skill, title: "\(skill) reached level \(level)", detail: payload.xpGained.map { "+\($0) XP" }, rawType: "skill_level_up")
     }
 
     private func handlePoiEvent(_ data: Data, arrived: Bool) {
-        guard let payload = try? JSONDecoder().decode(PoiEventPayload.self, from: data) else { return }
+        guard let payload = ResilientDecoder.decodeOrNil(PoiEventPayload.self, from: data) else { return }
         let who = payload.username ?? "Someone"
         let where_ = payload.poiName ?? "unknown"
         appendEvent(
@@ -289,7 +289,7 @@ class GameStateManager {
     }
 
     private func handlePlayerDied(_ data: Data) {
-        guard let payload = try? JSONDecoder().decode(PlayerDiedPayload.self, from: data) else { return }
+        guard let payload = ResilientDecoder.decodeOrNil(PlayerDiedPayload.self, from: data) else { return }
         appendEvent(
             category: .combat,
             title: "Ship destroyed",
@@ -299,7 +299,7 @@ class GameStateManager {
     }
 
     private func handlePirateWarning(_ data: Data) {
-        guard let payload = try? JSONDecoder().decode(PirateWarningPayload.self, from: data) else { return }
+        guard let payload = ResilientDecoder.decodeOrNil(PirateWarningPayload.self, from: data) else { return }
         let name = payload.pirateName ?? "Pirate"
         let tier = payload.pirateTier ?? "unknown"
         let boss = payload.isBoss == true ? " BOSS" : ""
@@ -313,7 +313,7 @@ class GameStateManager {
     }
 
     private func handlePirateCombat(_ data: Data) {
-        guard let payload = try? JSONDecoder().decode(PirateCombatPayload.self, from: data) else { return }
+        guard let payload = ResilientDecoder.decodeOrNil(PirateCombatPayload.self, from: data) else { return }
         let name = payload.pirateName ?? "Pirate"
         let dmg = payload.damage ?? 0
         let dmgType = payload.damageType ?? "unknown"
@@ -330,7 +330,7 @@ class GameStateManager {
     }
 
     private func handlePirateDestroyed(_ data: Data) {
-        guard let payload = try? JSONDecoder().decode(PirateDestroyedPayload.self, from: data) else { return }
+        guard let payload = ResilientDecoder.decodeOrNil(PirateDestroyedPayload.self, from: data) else { return }
         let name = payload.pirateName ?? "Pirate"
         let tier = payload.pirateTier ?? ""
         let boss = payload.isBoss == true ? " BOSS" : ""
@@ -350,7 +350,7 @@ class GameStateManager {
     }
 
     private func handleOkEvent(_ data: Data) {
-        guard let payload = try? JSONDecoder().decode(OkActionPayload.self, from: data) else { return }
+        guard let payload = ResilientDecoder.decodeOrNil(OkActionPayload.self, from: data) else { return }
 
         switch payload.action {
         case "travel":
@@ -413,7 +413,7 @@ class GameStateManager {
     }
 
     private func handleError(_ data: Data) {
-        guard let payload = try? JSONDecoder().decode(ErrorPayload.self, from: data) else { return }
+        guard let payload = ResilientDecoder.decodeOrNil(ErrorPayload.self, from: data) else { return }
         let message = payload.message ?? "Unknown error"
         appendEvent(category: .system, title: "Error: \(message)", detail: payload.code, rawType: "error")
     }
