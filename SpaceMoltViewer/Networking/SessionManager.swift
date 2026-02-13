@@ -36,11 +36,19 @@ class SessionManager {
     private(set) var mcpSessionId: String?
     private(set) var gameSessionId: String?
 
+    // Saved credentials for MCP re-initialization after reconnect
+    private var savedUsername: String?
+    private var savedPassword: String?
+
     var isConnected: Bool { connectionState.isConnected }
 
     func connect(username: String, password: String) async {
         SMLog.auth.info("Starting connection for user: \(username)")
         connectionState = .connecting
+
+        // Save credentials for MCP re-initialization on reconnect
+        savedUsername = username
+        savedPassword = password
 
         do {
             // Connect WebSocket and MCP in parallel
@@ -67,6 +75,10 @@ class SessionManager {
         client.connectionStateHandler = { [weak self] state in
             Task { @MainActor in
                 self?.connectionState = state
+                // Re-initialize MCP session after WebSocket reconnection
+                if case .connected = state {
+                    await self?.reinitializeMCP()
+                }
             }
         }
         _ = try await client.connect()
@@ -103,6 +115,21 @@ class SessionManager {
         SMLog.auth.info("MCP: session established")
     }
 
+    private func reinitializeMCP() async {
+        guard let username = savedUsername, let password = savedPassword else {
+            SMLog.auth.error("Cannot re-initialize MCP: no saved credentials")
+            return
+        }
+
+        SMLog.auth.info("Re-initializing MCP session after reconnect...")
+        do {
+            try await connectMCP(username: username, password: password)
+            SMLog.auth.info("MCP session re-initialized successfully")
+        } catch {
+            SMLog.auth.error("Failed to re-initialize MCP session: \(error.localizedDescription)")
+        }
+    }
+
     func disconnect() async {
         SMLog.auth.info("Disconnecting")
         if let client = webSocketClient {
@@ -111,6 +138,8 @@ class SessionManager {
         webSocketClient = nil
         mcpSessionId = nil
         gameSessionId = nil
+        savedUsername = nil
+        savedPassword = nil
         connectionState = .disconnected
         SMLog.auth.info("Disconnected")
     }
