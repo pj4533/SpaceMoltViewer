@@ -45,14 +45,33 @@ struct NearbyPlayer: Decodable, Sendable, Identifiable {
 }
 
 struct NearbyPirate: Decodable, Sendable, Identifiable {
-    let id: String
+    let pirateId: String
     let name: String
-    let shipClass: String
-    let hullPercent: Int
+    let hull: Int
+    let maxHull: Int
+    let shield: Int
+    let maxShield: Int
+    let tier: String
+    let status: String
+    let isBoss: Bool
+
+    var id: String { pirateId }
+
+    var hullPercent: Int {
+        guard maxHull > 0 else { return 0 }
+        return Int(Double(hull) / Double(maxHull) * 100)
+    }
+
+    var shieldPercent: Int {
+        guard maxShield > 0 else { return 0 }
+        return Int(Double(shield) / Double(maxShield) * 100)
+    }
 
     enum CodingKeys: String, CodingKey {
-        case id, name
-        case shipClass = "ship_class"
-        case hullPercent = "hull_percent"
+        case name, hull, shield, tier, status
+        case pirateId = "pirate_id"
+        case maxHull = "max_hull"
+        case maxShield = "max_shield"
+        case isBoss = "is_boss"
     }
 }

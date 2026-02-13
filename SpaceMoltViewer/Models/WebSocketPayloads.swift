@@ -118,6 +118,46 @@ struct PlayerDiedPayload: Decodable, Sendable {
     }
 }
 
+struct PirateWarningPayload: Decodable, Sendable {
+    let pirateName: String?
+    let pirateId: String?
+    let pirateTier: String?
+    let isBoss: Bool?
+    let message: String?
+
+    enum CodingKeys: String, CodingKey {
+        case message
+        case pirateName = "pirate_name"
+        case pirateId = "pirate_id"
+        case pirateTier = "pirate_tier"
+        case isBoss = "is_boss"
+    }
+}
+
+struct PirateCombatPayload: Decodable, Sendable {
+    let pirateName: String?
+    let pirateId: String?
+    let pirateTier: String?
+    let isBoss: Bool?
+    let damage: Int?
+    let damageType: String?
+    let yourHull: Int?
+    let yourMaxHull: Int?
+    let yourShield: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case damage
+        case pirateName = "pirate_name"
+        case pirateId = "pirate_id"
+        case pirateTier = "pirate_tier"
+        case isBoss = "is_boss"
+        case damageType = "damage_type"
+        case yourHull = "your_hull"
+        case yourMaxHull = "your_max_hull"
+        case yourShield = "your_shield"
+    }
+}
+
 struct OkActionPayload: Decodable, Sendable {
     let action: String
     let destination: String?

@@ -12,9 +12,16 @@ struct NearbyCompact: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Text("\(nearby.count) players, \(nearby.pirateCount) pirates")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    if nearby.pirateCount > 0 {
+                        Text("⚠ \(nearby.pirateCount) pirate\(nearby.pirateCount == 1 ? "" : "s")")
+                            .font(.caption2.bold())
+                            .foregroundStyle(.red)
+                    }
+                    if nearby.count > 0 {
+                        Text("\(nearby.count) player\(nearby.count == 1 ? "" : "s")")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 if nearby.count == 0 && nearby.pirateCount == 0 {
@@ -36,16 +43,19 @@ struct NearbyCompact: View {
                         }
                         ForEach(nearby.pirates.prefix(2)) { pirate in
                             HStack(spacing: 4) {
-                                Image(systemName: "exclamationmark.triangle.fill")
+                                Text(pirate.isBoss ? "💀" : "☠️")
                                     .font(.caption2)
-                                    .foregroundStyle(.red)
                                 Text(pirate.name)
-                                    .font(.caption)
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.red)
                                     .lineLimit(1)
                                 Spacer()
+                                Text("\(pirate.tier.capitalized)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.red.opacity(0.7))
                                 Text("\(pirate.hullPercent)%")
                                     .font(.caption2.monospacedDigit())
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(.red.opacity(0.8))
                             }
                         }
                         if nearby.count > 3 || nearby.pirateCount > 2 {
@@ -57,7 +67,12 @@ struct NearbyCompact: View {
                 }
             }
             .padding(10)
-            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
+            .background(
+                nearby.pirateCount > 0
+                    ? AnyShapeStyle(.red.opacity(0.12))
+                    : AnyShapeStyle(.quaternary.opacity(0.5)),
+                in: RoundedRectangle(cornerRadius: 8)
+            )
         }
         .buttonStyle(.plain)
     }

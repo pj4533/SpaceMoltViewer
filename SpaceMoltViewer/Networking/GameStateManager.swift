@@ -151,6 +151,10 @@ class GameStateManager {
             handlePoiEvent(message.payloadData, arrived: false)
         case "player_died":
             handlePlayerDied(message.payloadData)
+        case "pirate_warning":
+            handlePirateWarning(message.payloadData)
+        case "pirate_combat":
+            handlePirateCombat(message.payloadData)
         case "ok":
             handleOkEvent(message.payloadData)
         case "gameplay_tip":
@@ -284,6 +288,36 @@ class GameStateManager {
             title: "Ship destroyed",
             detail: payload.killer.map { "Killed by: \($0)" },
             rawType: "player_died"
+        )
+    }
+
+    private func handlePirateWarning(_ data: Data) {
+        guard let payload = try? JSONDecoder().decode(PirateWarningPayload.self, from: data) else { return }
+        let name = payload.pirateName ?? "Pirate"
+        let tier = payload.pirateTier ?? "unknown"
+        let boss = payload.isBoss == true ? " BOSS" : ""
+        appendEvent(
+            category: .pirate,
+            title: "\(name) attacking!",
+            detail: "\(tier.capitalized)\(boss) pirate",
+            rawType: "pirate_warning"
+        )
+        Task { await refreshNearby(force: true) }
+    }
+
+    private func handlePirateCombat(_ data: Data) {
+        guard let payload = try? JSONDecoder().decode(PirateCombatPayload.self, from: data) else { return }
+        let name = payload.pirateName ?? "Pirate"
+        let dmg = payload.damage ?? 0
+        let dmgType = payload.damageType ?? "unknown"
+        let hull = payload.yourHull ?? 0
+        let maxHull = payload.yourMaxHull ?? 0
+        let shield = payload.yourShield ?? 0
+        appendEvent(
+            category: .pirate,
+            title: "\(name) hit for \(dmg) \(dmgType)",
+            detail: "Shield: \(shield) | Hull: \(hull)/\(maxHull)",
+            rawType: "pirate_combat"
         )
     }
 
