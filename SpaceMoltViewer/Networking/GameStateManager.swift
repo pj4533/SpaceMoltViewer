@@ -21,6 +21,8 @@ class GameStateManager {
     private(set) var publicMap: [MapSystem]?
     private(set) var captainsLog: CaptainsLogResponse?
 
+    private(set) var poiResources: [String: [PoiResource]] = [:]
+
     private(set) var lastError: String?
     var isConnected: Bool { _isConnected }
 
@@ -453,8 +455,42 @@ class GameStateManager {
         do {
             system = try await gameAPI.getSystem()
             SMLog.api.debug("System refreshed: \(self.system?.system.name ?? "?")")
+            if let pois = system?.pois {
+                await fetchPoiResources(for: pois)
+            }
         } catch {
             SMLog.api.error("Failed to refresh system: \(error.localizedDescription)")
+        }
+    }
+
+    private func fetchPoiResources(for pois: [PointOfInterest]) async {
+        // Clear previous resources
+        poiResources = [:]
+
+        // Skip if POIs already have inline resources from get_system
+        let needsFetch = pois.filter { $0.canHaveResources && ($0.resources == nil || $0.resources!.isEmpty) }
+        let alreadyHave = pois.filter { $0.canHaveResources && $0.resources != nil && !$0.resources!.isEmpty }
+
+        // Store inline resources
+        for poi in alreadyHave {
+            poiResources[poi.id] = poi.resources
+        }
+
+        guard !needsFetch.isEmpty else {
+            SMLog.api.debug("All POI resources available inline, no get_poi calls needed")
+            return
+        }
+
+        SMLog.api.debug("Fetching resources for \(needsFetch.count) POIs via get_poi")
+        for poi in needsFetch {
+            do {
+                let detail = try await gameAPI.getPoi(id: poi.id)
+                if let resources = detail.resources, !resources.isEmpty {
+                    poiResources[poi.id] = resources
+                }
+            } catch {
+                SMLog.api.debug("Failed to fetch POI \(poi.id) resources: \(error.localizedDescription)")
+            }
         }
     }
 

@@ -31,6 +31,18 @@ struct Position: Decodable, Sendable {
     let y: Double
 }
 
+struct PoiResource: Decodable, Sendable, Identifiable {
+    let resourceId: String
+    let richness: Int
+
+    var id: String { resourceId }
+
+    enum CodingKeys: String, CodingKey {
+        case resourceId = "resource_id"
+        case richness
+    }
+}
+
 struct PointOfInterest: Decodable, Sendable, Identifiable {
     let id: String
     let systemId: String
@@ -38,6 +50,7 @@ struct PointOfInterest: Decodable, Sendable, Identifiable {
     let name: String
     let description: String?
     let position: Position?
+    let resources: [PoiResource]?
 
     var poiIcon: String {
         switch type {
@@ -53,8 +66,22 @@ struct PointOfInterest: Decodable, Sendable, Identifiable {
         }
     }
 
+    /// POI types that can have mineable/collectible resources
+    static let resourcePoiTypes: Set<String> = [
+        "asteroid_belt", "gas_cloud", "ice_field", "planet", "relic"
+    ]
+
+    var canHaveResources: Bool {
+        Self.resourcePoiTypes.contains(type)
+    }
+
     enum CodingKeys: String, CodingKey {
-        case id, type, name, description, position
+        case id, type, name, description, position, resources
         case systemId = "system_id"
     }
+}
+
+struct PoiDetailResponse: Decodable, Sendable {
+    let poi: PointOfInterest
+    let resources: [PoiResource]?
 }

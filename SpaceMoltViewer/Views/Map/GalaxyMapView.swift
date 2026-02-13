@@ -2,6 +2,8 @@ import SwiftUI
 
 struct GalaxyMapView: View {
     @Bindable var viewModel: MapViewModel
+    @GestureState private var activeDrag: CGSize = .zero
+    @GestureState private var activeZoom: CGFloat = 1.0
 
     var body: some View {
         ZStack {
@@ -18,22 +20,36 @@ struct GalaxyMapView: View {
             } else {
                 GeometryReader { geometry in
                     let size = geometry.size
+                    let effectiveScale = max(0.5, min(10, viewModel.scale * activeZoom))
+                    let effectiveOffset = CGSize(
+                        width: viewModel.offset.width + activeDrag.width,
+                        height: viewModel.offset.height + activeDrag.height
+                    )
                     Canvas { context, canvasSize in
                         drawConnections(context: context, size: canvasSize)
                         drawSystems(context: context, size: canvasSize)
                     }
-                    .scaleEffect(viewModel.scale)
-                    .offset(viewModel.offset)
+                    .scaleEffect(effectiveScale)
+                    .offset(effectiveOffset)
                     .gesture(
                         MagnifyGesture()
-                            .onChanged { value in
-                                viewModel.scale = max(0.5, min(10, value.magnification))
+                            .updating($activeZoom) { value, state, _ in
+                                state = value.magnification
+                            }
+                            .onEnded { value in
+                                viewModel.scale = max(0.5, min(10, viewModel.scale * value.magnification))
                             }
                     )
                     .simultaneousGesture(
                         DragGesture()
-                            .onChanged { value in
-                                viewModel.offset = value.translation
+                            .updating($activeDrag) { value, state, _ in
+                                state = value.translation
+                            }
+                            .onEnded { value in
+                                viewModel.offset = CGSize(
+                                    width: viewModel.offset.width + value.translation.width,
+                                    height: viewModel.offset.height + value.translation.height
+                                )
                             }
                     )
                     .onTapGesture { location in

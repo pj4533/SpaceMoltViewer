@@ -100,18 +100,22 @@ struct GameAPI {
         return normalized
     }
 
-    /// Truncate floating-point numbers with excessive precision.
-    /// e.g. 2.9000000000000012 → 2.90, -1.5000000000000002 → -1.50
+    /// Reformat floating-point numbers that Swift's JSON parser rejects.
+    /// Some numbers (e.g. 9.49) trigger "not representable in Swift" errors.
+    /// Converting to scientific notation (e.g. 9.49e0) bypasses the parser bug.
     private static func sanitizeFloatingPoint(_ data: Data) -> Data {
-        guard var json = String(data: data, encoding: .utf8) else { return data }
-        if let regex = try? NSRegularExpression(pattern: #"(-?\d+\.\d{2})\d+"#) {
-            json = regex.stringByReplacingMatches(
-                in: json,
-                range: NSRange(json.startIndex..., in: json),
-                withTemplate: "$1"
-            )
+        guard let json = String(data: data, encoding: .utf8) else { return data }
+        guard let regex = try? NSRegularExpression(pattern: #"-?\d+\.\d+"#) else { return data }
+        let mutable = NSMutableString(string: json)
+        let matches = regex.matches(in: json, range: NSRange(json.startIndex..., in: json))
+        for match in matches.reversed() {
+            let numStr = mutable.substring(with: match.range)
+            if Double(numStr) != nil {
+                // Append e0 to force scientific notation parsing path
+                mutable.replaceCharacters(in: match.range, with: numStr + "e0")
+            }
         }
-        return json.data(using: .utf8) ?? data
+        return (mutable as String).data(using: .utf8) ?? data
     }
 
     /// Log detailed information about a decode failure
@@ -190,6 +194,10 @@ struct GameAPI {
 
     func viewStorage() async throws -> StorageResponse {
         try await call(tool: "view_storage")
+    }
+
+    func getPoi(id poiId: String) async throws -> PoiDetailResponse {
+        try await call(tool: "get_poi", extraArgs: ["poi_id": poiId])
     }
 
     // MARK: - On Demand

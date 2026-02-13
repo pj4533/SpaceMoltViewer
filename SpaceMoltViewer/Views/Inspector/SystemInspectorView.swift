@@ -108,7 +108,7 @@ struct SystemInspectorView: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
 
-                        PoiListView(pois: detail.pois)
+                        PoiListView(pois: detail.pois, poiResources: gameStateManager.poiResources)
                     }
                 }
             }
