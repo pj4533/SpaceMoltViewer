@@ -53,16 +53,95 @@ struct GameAPI {
             mcpSessionId: mcpSessionId
         )
 
-        do {
-            let result = try JSONDecoder().decode(T.self, from: data)
-            SMLog.api.debug("\(tool) decoded successfully as \(String(describing: T.self))")
-            return result
-        } catch {
-            SMLog.decode.error("\(tool) decode failed for \(String(describing: T.self)): \(error)")
-            if let jsonString = String(data: data.prefix(500), encoding: .utf8) {
-                SMLog.decode.debug("\(tool) raw response (first 500 chars): \(jsonString)")
+        // Build decode attempts:
+        // 1. Direct decode
+        // 2. Round-trip through JSONSerialization (ObjC parser handles floats the Swift parser rejects)
+        // 3. Regex sanitization (truncate excessive decimal precision)
+        var attempts: [(String, Data)] = [("direct", data)]
+
+        if let normalized = Self.normalizeJSON(data) {
+            attempts.append(("normalized", normalized))
+        }
+
+        let sanitized = Self.sanitizeFloatingPoint(data)
+        if sanitized != data {
+            attempts.append(("sanitized", sanitized))
+        }
+
+        for (index, (label, payload)) in attempts.enumerated() {
+            do {
+                let result = try JSONDecoder().decode(T.self, from: payload)
+                if index > 0 {
+                    SMLog.api.debug("\(tool) decoded as \(String(describing: T.self)) (after \(label))")
+                } else {
+                    SMLog.api.debug("\(tool) decoded successfully as \(String(describing: T.self))")
+                }
+                return result
+            } catch {
+                if index < attempts.count - 1 {
+                    SMLog.decode.debug("\(tool): \(label) decode failed, trying next approach")
+                    continue
+                }
+                // All attempts failed — detailed logging
+                Self.logDecodeFailure(tool: tool, type: T.self, error: error, data: data)
+                throw error
             }
-            throw error
+        }
+        fatalError("Unreachable")
+    }
+
+    /// Normalize JSON by round-tripping through JSONSerialization (ObjC parser).
+    /// Handles floating-point numbers that Swift's Foundation JSON parser rejects (e.g. "5.29").
+    private static func normalizeJSON(_ data: Data) -> Data? {
+        guard let obj = try? JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed),
+              let normalized = try? JSONSerialization.data(withJSONObject: obj) else {
+            return nil
+        }
+        return normalized
+    }
+
+    /// Truncate floating-point numbers with excessive precision.
+    /// e.g. 2.9000000000000012 → 2.90, -1.5000000000000002 → -1.50
+    private static func sanitizeFloatingPoint(_ data: Data) -> Data {
+        guard var json = String(data: data, encoding: .utf8) else { return data }
+        if let regex = try? NSRegularExpression(pattern: #"(-?\d+\.\d{2})\d+"#) {
+            json = regex.stringByReplacingMatches(
+                in: json,
+                range: NSRange(json.startIndex..., in: json),
+                withTemplate: "$1"
+            )
+        }
+        return json.data(using: .utf8) ?? data
+    }
+
+    /// Log detailed information about a decode failure
+    private static func logDecodeFailure(tool: String, type: Any.Type, error: Error, data: Data) {
+        SMLog.decode.error("\(tool) all decode attempts failed for \(String(describing: type))")
+
+        if let jsonString = String(data: data, encoding: .utf8) {
+            let previewLen = min(jsonString.count, 2000)
+            let preview = String(jsonString.prefix(previewLen))
+            SMLog.decode.error("\(tool) raw response (\(data.count) bytes, first \(previewLen) chars):\n\(preview)")
+        }
+
+        switch error {
+        case DecodingError.dataCorrupted(let ctx):
+            let path = ctx.codingPath.map { $0.stringValue }.joined(separator: ".")
+            SMLog.decode.error("\(tool) dataCorrupted at '\(path.isEmpty ? "root" : path)': \(ctx.debugDescription)")
+            if let underlying = ctx.underlyingError {
+                SMLog.decode.error("\(tool) underlying: \(underlying)")
+            }
+        case DecodingError.typeMismatch(let expectedType, let ctx):
+            let path = ctx.codingPath.map { $0.stringValue }.joined(separator: ".")
+            SMLog.decode.error("\(tool) typeMismatch at '\(path)': expected \(expectedType), \(ctx.debugDescription)")
+        case DecodingError.keyNotFound(let key, let ctx):
+            let path = ctx.codingPath.map { $0.stringValue }.joined(separator: ".")
+            SMLog.decode.error("\(tool) keyNotFound '\(key.stringValue)' at '\(path)': \(ctx.debugDescription)")
+        case DecodingError.valueNotFound(let expectedType, let ctx):
+            let path = ctx.codingPath.map { $0.stringValue }.joined(separator: ".")
+            SMLog.decode.error("\(tool) valueNotFound at '\(path)': expected \(expectedType), \(ctx.debugDescription)")
+        default:
+            SMLog.decode.error("\(tool) error: \(error)")
         }
     }
 

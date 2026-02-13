@@ -155,8 +155,12 @@ class GameStateManager {
             handlePirateWarning(message.payloadData)
         case "pirate_combat":
             handlePirateCombat(message.payloadData)
+        case "pirate_destroyed":
+            handlePirateDestroyed(message.payloadData)
         case "ok":
             handleOkEvent(message.payloadData)
+        case "error":
+            handleError(message.payloadData)
         case "gameplay_tip":
             handleGameplayTip(message.payloadData)
         case "tick":
@@ -250,6 +254,7 @@ class GameStateManager {
         ].compactMap { $0 }.joined(separator: " | ")
 
         appendEvent(category: .combat, title: "Combat hit", detail: detail.isEmpty ? nil : detail, rawType: "combat_update")
+        Task { await refreshNearby(force: true) }
     }
 
     private func handleMiningYield(_ data: Data) {
@@ -319,6 +324,27 @@ class GameStateManager {
             detail: "Shield: \(shield) | Hull: \(hull)/\(maxHull)",
             rawType: "pirate_combat"
         )
+        Task { await refreshNearby(force: true) }
+    }
+
+    private func handlePirateDestroyed(_ data: Data) {
+        guard let payload = try? JSONDecoder().decode(PirateDestroyedPayload.self, from: data) else { return }
+        let name = payload.pirateName ?? "Pirate"
+        let tier = payload.pirateTier ?? ""
+        let boss = payload.isBoss == true ? " BOSS" : ""
+        var details: [String] = []
+        if let xp = payload.combatXp { details.append("+\(xp) XP") }
+        if let credits = payload.creditsEarned { details.append("+\(credits) credits") }
+        appendEvent(
+            category: .pirate,
+            title: "\(name) destroyed!",
+            detail: (["\(tier.capitalized)\(boss)"] + details).joined(separator: " | "),
+            rawType: "pirate_destroyed"
+        )
+        Task {
+            await refreshNearby(force: true)
+            await refreshSkills(force: true)
+        }
     }
 
     private func handleOkEvent(_ data: Data) {
@@ -373,9 +399,21 @@ class GameStateManager {
             appendEvent(category: .base, title: "Refueled", detail: nil, rawType: "ok:refuel")
         case "repair":
             appendEvent(category: .base, title: "Repaired", detail: nil, rawType: "ok:repair")
+        case "attack":
+            let targetName = nearby?.pirates.first(where: { $0.pirateId == payload.target })?.name ?? payload.target ?? "enemy"
+            appendEvent(category: .pirate, title: "Attacking \(targetName)", detail: payload.message, rawType: "ok:attack")
+            Task { await refreshNearby(force: true) }
+        case "flee":
+            appendEvent(category: .pirate, title: "Fleeing!", detail: payload.message, rawType: "ok:flee")
         default:
             appendEvent(category: .system, title: payload.action, detail: nil, rawType: "ok:\(payload.action)")
         }
+    }
+
+    private func handleError(_ data: Data) {
+        guard let payload = try? JSONDecoder().decode(ErrorPayload.self, from: data) else { return }
+        let message = payload.message ?? "Unknown error"
+        appendEvent(category: .system, title: "Error: \(message)", detail: payload.code, rawType: "error")
     }
 
     private func handleGameplayTip(_ data: Data) {

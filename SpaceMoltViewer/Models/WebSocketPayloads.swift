@@ -158,13 +158,38 @@ struct PirateCombatPayload: Decodable, Sendable {
     }
 }
 
+struct PirateDestroyedPayload: Decodable, Sendable {
+    let pirateName: String?
+    let pirateId: String?
+    let pirateTier: String?
+    let isBoss: Bool?
+    let combatXp: Int?
+    let creditsEarned: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case pirateName = "pirate_name"
+        case pirateId = "pirate_id"
+        case pirateTier = "pirate_tier"
+        case isBoss = "is_boss"
+        case combatXp = "combat_xp"
+        case creditsEarned = "credits_earned"
+    }
+}
+
+struct ErrorPayload: Decodable, Sendable {
+    let message: String?
+    let code: String?
+}
+
 struct OkActionPayload: Decodable, Sendable {
     let action: String
     let destination: String?
     let base: String?
     let system: String?
+    let target: String?
+    let message: String?
 
     enum CodingKeys: String, CodingKey {
-        case action, destination, base, system
+        case action, destination, base, system, target, message
     }
 }
