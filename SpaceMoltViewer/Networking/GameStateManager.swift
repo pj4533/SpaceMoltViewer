@@ -254,6 +254,8 @@ class GameStateManager {
             payload.target.map { "Target: \($0)" },
             payload.damage.map { "Damage: \($0)" },
             payload.damageType.map { "Type: \($0)" },
+            payload.shieldHit == true ? "Shield hit" : nil,
+            payload.hullHit == true ? "Hull hit" : nil,
             payload.destroyed == true ? "DESTROYED" : nil
         ].compactMap { $0 }.joined(separator: " | ")
 
@@ -263,16 +265,15 @@ class GameStateManager {
 
     private func handleMiningYield(_ data: Data) {
         guard let payload = ResilientDecoder.decodeOrNil(MiningYieldPayload.self, from: data) else { return }
-        let resource = payload.resourceId ?? "unknown"
+        let resource = formatSnakeCase(payload.resourceId ?? "unknown")
         let qty = payload.quantity ?? 0
         appendEvent(category: .mining, title: "Mined \(qty)x \(resource)", detail: payload.remaining.map { "Remaining: \($0)" }, rawType: "mining_yield")
-        // Cargo changed — refresh via API
         Task { await refreshCargo() }
     }
 
     private func handleSkillLevelUp(_ data: Data) {
         guard let payload = ResilientDecoder.decodeOrNil(SkillLevelUpPayload.self, from: data) else { return }
-        let skill = payload.skillId ?? "unknown"
+        let skill = formatSnakeCase(payload.skillId ?? "unknown")
         let level = payload.newLevel ?? 0
         appendEvent(category: .skill, title: "\(skill) reached level \(level)", detail: payload.xpGained.map { "+\($0) XP" }, rawType: "skill_level_up")
     }
@@ -292,10 +293,16 @@ class GameStateManager {
 
     private func handlePlayerDied(_ data: Data) {
         guard let payload = ResilientDecoder.decodeOrNil(PlayerDiedPayload.self, from: data) else { return }
+        var details: [String] = []
+        if let killer = payload.killer { details.append("Killed by: \(killer)") }
+        if let respawn = payload.respawnBase { details.append("Respawn: \(respawn)") }
+        if let cost = payload.cloneCost { details.append("Clone cost: \(cost)cr") }
+        if let payout = payload.insurancePayout { details.append("Insurance: \(payout)cr") }
+        if let ship = payload.newShipClass { details.append("New ship: \(formatSnakeCase(ship))") }
         appendEvent(
             category: .combat,
-            title: "Ship destroyed",
-            detail: payload.killer.map { "Killed by: \($0)" },
+            title: "Ship destroyed!",
+            detail: details.isEmpty ? nil : details.joined(separator: " | "),
             rawType: "player_died"
         )
     }
@@ -305,10 +312,12 @@ class GameStateManager {
         let name = payload.pirateName ?? "Pirate"
         let tier = payload.pirateTier ?? "unknown"
         let boss = payload.isBoss == true ? " BOSS" : ""
+        var details: [String] = ["\(tier.capitalized)\(boss) pirate"]
+        if let message = payload.message { details.append(message) }
         appendEvent(
             category: .pirate,
             title: "\(name) attacking!",
-            detail: "\(tier.capitalized)\(boss) pirate",
+            detail: details.joined(separator: " | "),
             rawType: "pirate_warning"
         )
         Task { await refreshNearby(force: true) }
@@ -357,52 +366,53 @@ class GameStateManager {
         switch payload.action {
         case "travel":
             let dest = payload.destination ?? "unknown"
-            appendEvent(category: .navigation, title: "Traveling to \(dest)", detail: nil, rawType: "ok:travel")
+            appendEvent(category: .navigation, title: "Traveling to \(dest)", detail: payload.message, rawType: "ok:travel")
         case "arrived":
-            appendEvent(category: .navigation, title: "Arrived at destination", detail: nil, rawType: "ok:arrived")
+            let dest = payload.destination ?? payload.system
+            appendEvent(category: .navigation, title: "Arrived\(dest.map { " at \($0)" } ?? "")", detail: payload.message, rawType: "ok:arrived")
             Task {
                 await refreshSystem()
                 await refreshNearby()
             }
         case "dock":
             let base = payload.base ?? "station"
-            appendEvent(category: .base, title: "Docked at \(base)", detail: nil, rawType: "ok:dock")
+            appendEvent(category: .base, title: "Docked at \(base)", detail: payload.system.map { "System: \($0)" }, rawType: "ok:dock")
             Task {
                 await refreshStorage()
                 await refreshNearby()
             }
         case "undock":
-            appendEvent(category: .base, title: "Undocked", detail: nil, rawType: "ok:undock")
+            appendEvent(category: .base, title: "Undocked", detail: payload.message ?? payload.base, rawType: "ok:undock")
             storage = nil
             Task { await refreshNearby() }
         case "mine":
-            appendEvent(category: .mining, title: "Mining", detail: nil, rawType: "ok:mine")
+            appendEvent(category: .mining, title: "Mining", detail: payload.message, rawType: "ok:mine")
         case "jump":
             let dest = payload.destination ?? "unknown system"
-            appendEvent(category: .navigation, title: "Jumping to \(dest)", detail: nil, rawType: "ok:jump")
+            appendEvent(category: .navigation, title: "Jumping to \(dest)", detail: payload.message, rawType: "ok:jump")
             Task {
                 await refreshSystem()
                 await refreshNearby()
             }
         case "sell":
-            appendEvent(category: .trade, title: "Sold items", detail: nil, rawType: "ok:sell")
+            appendEvent(category: .trade, title: "Sold items", detail: payload.message, rawType: "ok:sell")
             Task {
                 await refreshCargo()
                 await refreshStorage()
             }
         case "buy":
-            appendEvent(category: .trade, title: "Bought items", detail: nil, rawType: "ok:buy")
+            appendEvent(category: .trade, title: "Bought items", detail: payload.message, rawType: "ok:buy")
             Task {
                 await refreshCargo()
                 await refreshOwnedShips()
             }
         case "craft":
-            appendEvent(category: .trade, title: "Crafted item", detail: nil, rawType: "ok:craft")
+            appendEvent(category: .trade, title: "Crafted item", detail: payload.message, rawType: "ok:craft")
             Task { await refreshCargo() }
         case "refuel":
-            appendEvent(category: .base, title: "Refueled", detail: nil, rawType: "ok:refuel")
+            appendEvent(category: .base, title: "Refueled", detail: payload.message, rawType: "ok:refuel")
         case "repair":
-            appendEvent(category: .base, title: "Repaired", detail: nil, rawType: "ok:repair")
+            appendEvent(category: .base, title: "Repaired", detail: payload.message, rawType: "ok:repair")
         case "attack":
             let targetName = nearby?.pirates.first(where: { $0.pirateId == payload.target })?.name ?? payload.target ?? "enemy"
             appendEvent(category: .pirate, title: "Attacking \(targetName)", detail: payload.message, rawType: "ok:attack")
@@ -410,7 +420,9 @@ class GameStateManager {
         case "flee":
             appendEvent(category: .pirate, title: "Fleeing!", detail: payload.message, rawType: "ok:flee")
         default:
-            appendEvent(category: .system, title: payload.action, detail: nil, rawType: "ok:\(payload.action)")
+            let detail = [payload.message, payload.destination, payload.base, payload.system, payload.target]
+                .compactMap { $0 }.joined(separator: " | ")
+            appendEvent(category: .system, title: formatSnakeCase(payload.action), detail: detail.isEmpty ? nil : detail, rawType: "ok:\(payload.action)")
         }
     }
 
@@ -436,70 +448,78 @@ class GameStateManager {
         appendEvent(category: category, title: title, detail: detail, rawType: "action_result:\(command)")
     }
 
+    // swiftlint:disable:next cyclomatic_complexity function_body_length
     private func actionResultDescription(command: String, result: [String: Any]) -> (title: String, detail: String?) {
         var details: [String] = []
 
-        // Command-specific extraction
         switch command {
         case "analyze_market":
             if let analysis = result["analysis"] as? [String: Any] {
-                let items = analysis.values.compactMap { entry -> String? in
-                    guard let item = entry as? [String: Any],
+                let items: [String] = analysis.compactMap { _, value -> String? in
+                    guard let item = value as? [String: Any],
                           let name = item["item_name"] as? String else { return nil }
-                    if let stations = item["stations"] as? [[String: Any]], let station = stations.first {
-                        let buy = station["npc_buy_price"] as? Int
-                        let sell = station["npc_sell_price"] as? Int
-                        var prices: [String] = []
-                        if let buy { prices.append("buy \(buy)cr") }
-                        if let sell { prices.append("sell \(sell)cr") }
-                        return prices.isEmpty ? name : "\(name) (\(prices.joined(separator: "/")))"
+                    guard let stations = item["stations"] as? [Any],
+                          let first = stations.first as? [String: Any] else { return name }
+                    var parts: [String] = [name]
+                    let npcBuy = (first["npc_buy_price"] as? NSNumber)?.intValue
+                    let npcSell = (first["npc_sell_price"] as? NSNumber)?.intValue
+                    if let b = npcBuy, let s = npcSell {
+                        parts.append("NPC \(b)/\(s)cr")
+                    } else if let b = npcBuy {
+                        parts.append("NPC buy \(b)cr")
+                    } else if let s = npcSell {
+                        parts.append("NPC sell \(s)cr")
                     }
-                    return name
+                    let playerBuy = (first["best_player_buy"] as? NSNumber)?.intValue
+                    let playerSell = (first["best_player_sell"] as? NSNumber)?.intValue
+                    if let pb = playerBuy { parts.append("player buy \(pb)cr") }
+                    if let ps = playerSell { parts.append("player sell \(ps)cr") }
+                    let buyDepth = (first["player_buy_depth"] as? NSNumber)?.intValue
+                    let sellDepth = (first["player_sell_depth"] as? NSNumber)?.intValue
+                    if let bd = buyDepth { parts.append("buy depth \(bd)") }
+                    if let sd = sellDepth { parts.append("sell depth \(sd)") }
+                    if let station = first["base_name"] as? String {
+                        parts.append("at \(station)")
+                    }
+                    return parts.joined(separator: ", ")
                 }
-                if !items.isEmpty { details.append(items.joined(separator: ", ")) }
+                if !items.isEmpty { details.append(items.joined(separator: "; ")) }
             }
-            if let range = result["scanning_range"] as? String {
-                details.append("Range: \(range)")
-            }
-            if let totalItems = result["total_items"] as? Int {
-                details.append("\(totalItems) item\(totalItems == 1 ? "" : "s") found")
+            if let range = result["scanning_range"] as? String { details.append("Range: \(range)") }
+            if let level = (result["skill_level"] as? NSNumber)?.intValue { details.append("Skill Lv\(level)") }
+            if let totalItems = (result["total_items"] as? NSNumber)?.intValue {
+                details.append("\(totalItems) item\(totalItems == 1 ? "" : "s")")
             }
 
         default:
-            // Generic: pull out any "message" or "description" string
-            if let message = result["message"] as? String {
-                details.append(message)
-            }
-            if let description = result["description"] as? String {
+            if let message = result["message"] as? String { details.append(message) }
+            if let description = result["description"] as? String, description != result["message"] as? String {
                 details.append(description)
             }
-            // Show quantity/amount/credits if present
-            if let credits = result["credits"] as? Int {
-                details.append("\(credits) credits")
-            }
-            if let quantity = result["quantity"] as? Int {
-                details.append("x\(quantity)")
-            }
-            if let amount = result["amount"] as? Int {
-                details.append("x\(amount)")
-            }
-            if let itemName = result["item_name"] as? String {
-                details.append(itemName)
-            }
+            if let itemName = result["item_name"] as? String { details.append(itemName) }
+            if let quantity = (result["quantity"] as? NSNumber)?.intValue { details.append("x\(quantity)") }
+            if let amount = (result["amount"] as? NSNumber)?.intValue { details.append("x\(amount)") }
+            if let credits = (result["credits"] as? NSNumber)?.intValue { details.append("\(credits) credits") }
+            if let location = result["location"] as? String { details.append(location) }
+            if let target = result["target"] as? String { details.append(target) }
+            if let status = result["status"] as? String { details.append(status) }
         }
 
         // XP gained (common across all action_results)
         if let xpGained = result["xp_gained"] as? [String: Any], !xpGained.isEmpty {
             let xpParts = xpGained.compactMap { key, value -> String? in
-                guard let xp = value as? Int else { return nil }
-                let skill = key.replacingOccurrences(of: "_", with: " ").capitalized
-                return "+\(xp) \(skill) XP"
+                guard let xp = (value as? NSNumber)?.intValue else { return nil }
+                return "+\(xp) \(formatSnakeCase(key)) XP"
             }
             if !xpParts.isEmpty { details.append(xpParts.joined(separator: ", ")) }
         }
 
-        let title = command.replacingOccurrences(of: "_", with: " ").capitalized
+        let title = formatSnakeCase(command)
         return (title, details.isEmpty ? nil : details.joined(separator: " | "))
+    }
+
+    private func formatSnakeCase(_ text: String) -> String {
+        text.replacingOccurrences(of: "_", with: " ").capitalized
     }
 
     private func handleError(_ data: Data) {
