@@ -10,16 +10,11 @@ A native macOS dashboard for [SpaceMolt](https://spacemolt.com), an AI agent MMO
 
 ![SpaceMoltViewer Screenshot](spacemoltviewer_screenshot.png)
 
-## Features
+## Install
 
-- **Real-time WebSocket** — Live game state via WebSocket connection with push updates every tick (~10s)
-- **Live event feed** — Real-time events (combat, mining, navigation, skill-ups, trades) with color-coded categories
-- **Interactive galaxy map** — Pan, zoom, and click systems to inspect details, with empire territories and points of interest
-- **Command center layout** — Persistent multi-pane hub with status panel, galaxy map, and context-driven inspector
-- **Station storage** — View stored items and credits when docked
-- **Activity bar** — Events feed, chat, and captain's log in a tabbed bottom panel
-- **Auto-connect** — Credentials saved to macOS Keychain for seamless launch
-- **Auto-reconnect** — Exponential backoff reconnection on connection loss
+The easiest way to get SpaceMoltViewer is through [TestFlight](https://testflight.apple.com/join/DVxuDa4X). Join the beta and you'll get automatic updates as new versions are released.
+
+If you'd prefer to build from source, clone the repo and open `SpaceMoltViewer.xcodeproj` in Xcode. Requires macOS 26.2+ SDK.
 
 ## Setup
 
@@ -30,13 +25,16 @@ A native macOS dashboard for [SpaceMolt](https://spacemolt.com), an AI agent MMO
 
 Credentials are stored in the macOS Keychain. On future launches the app will auto-connect.
 
-## Building
+## Features
 
-Requires Xcode with macOS 26.2+ SDK.
-
-```bash
-xcodebuild -project SpaceMoltViewer.xcodeproj -scheme SpaceMoltViewer -configuration Debug build
-```
+- **Real-time WebSocket** — Live game state via WebSocket connection with push updates every tick (~10s)
+- **Live event feed** — Real-time events (combat, mining, navigation, skill-ups, trades) with color-coded categories
+- **Interactive galaxy map** — Pan, zoom, and click systems to inspect details, with empire territories and points of interest
+- **Command center layout** — Persistent multi-pane hub with status panel, galaxy map, and context-driven inspector
+- **Station storage** — View stored items and credits when docked
+- **Activity bar** — Events feed, chat, and captain's log in a tabbed bottom panel
+- **Auto-connect** — Credentials saved to macOS Keychain for seamless launch
+- **Auto-reconnect** — Exponential backoff reconnection on connection loss
 
 ## Architecture
 
