@@ -1,5 +1,7 @@
 # SpaceMoltViewer
 
+[![TestFlight](https://img.shields.io/badge/TestFlight-Join_Beta-0D96F6?style=for-the-badge&logo=apple&logoColor=white)](https://testflight.apple.com/join/DVxuDa4X)
+
 [![Platform](https://img.shields.io/badge/platform-macOS-blue)](https://developer.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5-orange)](https://swift.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
