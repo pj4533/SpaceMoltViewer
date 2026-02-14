@@ -499,14 +499,18 @@ class GameStateManager {
                     let bestBuy = (station["best_player_buy"] as? NSNumber)?.intValue
                     let buyDepth = (station["player_buy_depth"] as? NSNumber)?.intValue
                     if let bb = bestBuy {
-                        let depthStr = buyDepth.map { " (\($0) units)" } ?? ""
-                        details.append("Best buy order: \(bb)cr\(depthStr)")
+                        let depthStr = buyDepth.map { " (\($0) wanted)" } ?? ""
+                        details.append("Sell for: \(bb)cr\(depthStr)")
+                    } else {
+                        details.append("Sell for: no buyers")
                     }
                     let bestSell = (station["best_player_sell"] as? NSNumber)?.intValue
                     let sellDepth = (station["player_sell_depth"] as? NSNumber)?.intValue
                     if let bs = bestSell {
-                        let depthStr = sellDepth.map { " (\($0) units)" } ?? ""
-                        details.append("Best sell order: \(bs)cr\(depthStr)")
+                        let depthStr = sellDepth.map { " (\($0) available)" } ?? ""
+                        details.append("Buy for: \(bs)cr\(depthStr)")
+                    } else {
+                        details.append("Buy for: no sellers")
                     }
                 }
             }
