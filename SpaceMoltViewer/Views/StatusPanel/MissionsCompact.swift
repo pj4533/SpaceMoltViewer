@@ -11,7 +11,7 @@ struct MissionsCompact: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text("\(missions.totalCount)/\(missions.maxMissions)")
+                Text("\(missions.totalCount ?? 0)/\(missions.maxMissions ?? 0)")
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)
             }

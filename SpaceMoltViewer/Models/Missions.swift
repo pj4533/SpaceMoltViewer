@@ -2,8 +2,8 @@ import Foundation
 
 struct MissionsResponse: Decodable, Sendable {
     let missions: [Mission]?
-    let totalCount: Int
-    let maxMissions: Int
+    let totalCount: Int?
+    let maxMissions: Int?
 
     enum CodingKeys: String, CodingKey {
         case missions
@@ -24,9 +24,10 @@ struct Mission: Decodable, Sendable, Identifiable {
     let ticksRemaining: Int?
 
     enum CodingKeys: String, CodingKey {
-        case id, type, title, description, difficulty, objectives, rewards
+        case id = "mission_id"
+        case type, title, description, difficulty, objectives, rewards
         case expiresAt = "expires_at"
-        case ticksRemaining = "ticks_remaining"
+        case ticksRemaining = "expires_in_ticks"
     }
 }
 

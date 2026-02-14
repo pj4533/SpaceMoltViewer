@@ -161,6 +161,8 @@ class GameStateManager {
             handlePirateDestroyed(message.payloadData)
         case "ok":
             handleOkEvent(message.payloadData)
+        case "action_result":
+            handleActionResult(message.payloadData)
         case "error":
             handleError(message.payloadData)
         case "gameplay_tip":
@@ -410,6 +412,12 @@ class GameStateManager {
         default:
             appendEvent(category: .system, title: payload.action, detail: nil, rawType: "ok:\(payload.action)")
         }
+    }
+
+    private func handleActionResult(_ data: Data) {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+        let command = json["command"] as? String ?? "unknown"
+        appendEvent(category: .system, title: "Action: \(command)", detail: nil, rawType: "action_result:\(command)")
     }
 
     private func handleError(_ data: Data) {
