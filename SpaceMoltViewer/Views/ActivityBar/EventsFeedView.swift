@@ -43,7 +43,7 @@ struct EventsFeedView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 1) {
+                    LazyVStack(alignment: .leading, spacing: 2) {
                         ForEach(events) { event in
                             EventRow(event: event)
                         }
@@ -91,6 +91,8 @@ private struct EventRow: View {
 
             Spacer()
         }
-        .padding(.vertical, 1)
+        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .background(event.category.color.opacity(0.08), in: RoundedRectangle(cornerRadius: 4))
     }
 }

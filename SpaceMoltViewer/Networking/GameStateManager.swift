@@ -163,6 +163,8 @@ class GameStateManager {
             handleOkEvent(message.payloadData)
         case "action_result":
             handleActionResult(message.payloadData)
+        case "action_error":
+            handleActionError(message.payloadData)
         case "error":
             handleError(message.payloadData)
         case "gameplay_tip":
@@ -241,8 +243,8 @@ class GameStateManager {
 
         appendEvent(
             category: .info,
-            title: "[\(chatMsg.channel)] \(chatMsg.senderName): \(chatMsg.content)",
-            detail: nil,
+            title: "[\(chatMsg.channel)] \(chatMsg.senderName)",
+            detail: formatChatContent(chatMsg.content),
             rawType: "chat_message"
         )
     }
@@ -279,13 +281,39 @@ class GameStateManager {
     }
 
     private func handlePoiEvent(_ data: Data, arrived: Bool) {
-        guard let payload = ResilientDecoder.decodeOrNil(PoiEventPayload.self, from: data) else { return }
-        let who = payload.username ?? "Someone"
-        let where_ = payload.poiName ?? "unknown"
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+        let who = json["username"] as? String ?? "Someone"
+        let where_ = json["poi_name"] as? String ?? "unknown"
+        let skipKeys: Set<String> = ["username", "poi_name", "poi_id", "poi_type", "type", "player_id", "clan_tag"]
+        var details: [String] = []
+        if let shipClass = json["ship_class"] as? String, !shipClass.trimmingCharacters(in: .whitespaces).isEmpty {
+            details.append("Ship: \(formatSnakeCase(shipClass))")
+        }
+        if let clan = json["clan_tag"] as? String, !clan.trimmingCharacters(in: .whitespaces).isEmpty {
+            details.append("Clan: \(clan)")
+        }
+        if let system = json["system_name"] as? String ?? json["system"] as? String, !system.trimmingCharacters(in: .whitespaces).isEmpty {
+            details.append(system)
+        }
+        if let anonymous = json["anonymous"] as? Bool, anonymous {
+            details.append("Anonymous")
+        }
+        if let inCombat = json["in_combat"] as? Bool, inCombat {
+            details.append("In combat")
+        }
+        // Capture any remaining unknown fields
+        let handledKeys = skipKeys.union(["ship_class", "system_name", "system", "anonymous", "in_combat"])
+        for (key, value) in json where !handledKeys.contains(key) {
+            if let str = value as? String, !str.trimmingCharacters(in: .whitespaces).isEmpty {
+                details.append("\(formatSnakeCase(key)): \(str)")
+            } else if let num = value as? NSNumber, !(value is Bool) {
+                details.append("\(formatSnakeCase(key)): \(num)")
+            }
+        }
         appendEvent(
             category: .navigation,
             title: "\(who) \(arrived ? "arrived at" : "departed") \(where_)",
-            detail: nil,
+            detail: details.isEmpty ? nil : details.joined(separator: " | "),
             rawType: arrived ? "poi_arrival" : "poi_departure"
         )
         Task { await refreshNearby() }
@@ -430,6 +458,10 @@ class GameStateManager {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
         let command = json["command"] as? String ?? "unknown"
         let result = json["result"] as? [String: Any] ?? [:]
+        if result.isEmpty {
+            let preview = String(data: data.prefix(500), encoding: .utf8) ?? "(non-UTF8)"
+            SMLog.websocket.warning("action_result: empty result dict, raw=\(preview)")
+        }
 
         let category: GameEventCategory = switch command {
         case "analyze_market", "sell", "buy", "list_order", "cancel_order":
@@ -455,46 +487,35 @@ class GameStateManager {
         switch command {
         case "analyze_market":
             if let analysis = result["analysis"] as? [String: Any] {
-                let items: [String] = analysis.compactMap { _, value -> String? in
-                    guard let item = value as? [String: Any],
-                          let name = item["item_name"] as? String else { return nil }
+                for (itemKey, value) in analysis {
+                    guard let item = value as? [String: Any] else { continue }
+                    let name = item["item_name"] as? String ?? formatSnakeCase(itemKey)
+                    details.append(name)
                     guard let stations = item["stations"] as? [Any],
-                          let first = stations.first as? [String: Any] else { return name }
-                    var parts: [String] = [name]
-                    let npcBuy = (first["npc_buy_price"] as? NSNumber)?.intValue
-                    let npcSell = (first["npc_sell_price"] as? NSNumber)?.intValue
-                    if let b = npcBuy, let s = npcSell {
-                        parts.append("NPC \(b)/\(s)cr")
-                    } else if let b = npcBuy {
-                        parts.append("NPC buy \(b)cr")
-                    } else if let s = npcSell {
-                        parts.append("NPC sell \(s)cr")
+                          let station = stations.first as? [String: Any] else { continue }
+                    if let baseName = station["base_name"] as? String {
+                        details.append("Station: \(baseName)")
                     }
-                    let playerBuy = (first["best_player_buy"] as? NSNumber)?.intValue
-                    let playerSell = (first["best_player_sell"] as? NSNumber)?.intValue
-                    if let pb = playerBuy { parts.append("player buy \(pb)cr") }
-                    if let ps = playerSell { parts.append("player sell \(ps)cr") }
-                    let buyDepth = (first["player_buy_depth"] as? NSNumber)?.intValue
-                    let sellDepth = (first["player_sell_depth"] as? NSNumber)?.intValue
-                    if let bd = buyDepth { parts.append("buy depth \(bd)") }
-                    if let sd = sellDepth { parts.append("sell depth \(sd)") }
-                    if let station = first["base_name"] as? String {
-                        parts.append("at \(station)")
+                    let bestBuy = (station["best_player_buy"] as? NSNumber)?.intValue
+                    let buyDepth = (station["player_buy_depth"] as? NSNumber)?.intValue
+                    if let bb = bestBuy {
+                        let depthStr = buyDepth.map { " (\($0) units)" } ?? ""
+                        details.append("Best buy order: \(bb)cr\(depthStr)")
                     }
-                    return parts.joined(separator: ", ")
+                    let bestSell = (station["best_player_sell"] as? NSNumber)?.intValue
+                    let sellDepth = (station["player_sell_depth"] as? NSNumber)?.intValue
+                    if let bs = bestSell {
+                        let depthStr = sellDepth.map { " (\($0) units)" } ?? ""
+                        details.append("Best sell order: \(bs)cr\(depthStr)")
+                    }
                 }
-                if !items.isEmpty { details.append(items.joined(separator: "; ")) }
             }
-            if let range = result["scanning_range"] as? String { details.append("Range: \(range)") }
-            if let level = (result["skill_level"] as? NSNumber)?.intValue { details.append("Skill Lv\(level)") }
-            if let totalItems = (result["total_items"] as? NSNumber)?.intValue {
-                details.append("\(totalItems) item\(totalItems == 1 ? "" : "s")")
-            }
+            if let range = result["scanning_range"] as? String { details.append("Scan range: \(range)") }
 
         default:
-            if let message = result["message"] as? String { details.append(message) }
+            if let message = result["message"] as? String { details.append(formatChatContent(message)) }
             if let description = result["description"] as? String, description != result["message"] as? String {
-                details.append(description)
+                details.append(formatChatContent(description))
             }
             if let itemName = result["item_name"] as? String { details.append(itemName) }
             if let quantity = (result["quantity"] as? NSNumber)?.intValue { details.append("x\(quantity)") }
@@ -515,11 +536,68 @@ class GameStateManager {
         }
 
         let title = formatSnakeCase(command)
-        return (title, details.isEmpty ? nil : details.joined(separator: " | "))
+        return (title, details.isEmpty ? nil : details.joined(separator: "\n"))
     }
 
     private func formatSnakeCase(_ text: String) -> String {
         text.replacingOccurrences(of: "_", with: " ").capitalized
+    }
+
+    /// Format chat content: convert snake_case IDs to Title Case,
+    /// clean up key=value bot command params, and format quoted snake_case.
+    private func formatChatContent(_ content: String) -> String {
+        var text = content
+        // First: replace key=value pairs (e.g. "target_poi=haven_exchange" -> "Haven Exchange")
+        // These are bot command params — just show the value, formatted
+        if let kvRegex = try? NSRegularExpression(pattern: "\\b[a-z]+(?:_[a-z0-9]+)*=([a-z0-9]+(?:_[a-z0-9]+)*)\\b") {
+            let matches = kvRegex.matches(in: text, range: NSRange(text.startIndex..., in: text))
+            for match in matches.reversed() {
+                guard let fullRange = Range(match.range, in: text),
+                      let valueRange = Range(match.range(at: 1), in: text) else { continue }
+                let value = String(text[valueRange])
+                text.replaceSubrange(fullRange, with: formatSnakeCase(value))
+            }
+        }
+        // Then: replace remaining snake_case tokens (2+ segments)
+        if let snakeRegex = try? NSRegularExpression(pattern: "\\b([a-z]+(?:_[a-z0-9]+)+)\\b") {
+            let matches = snakeRegex.matches(in: text, range: NSRange(text.startIndex..., in: text))
+            for match in matches.reversed() {
+                guard let range = Range(match.range, in: text) else { continue }
+                let token = String(text[range])
+                text.replaceSubrange(range, with: formatSnakeCase(token))
+            }
+        }
+        // Also format 'quoted_snake_case' tokens
+        if let quotedRegex = try? NSRegularExpression(pattern: "'([a-z]+(?:_[a-z0-9]+)+)'") {
+            let matches = quotedRegex.matches(in: text, range: NSRange(text.startIndex..., in: text))
+            for match in matches.reversed() {
+                guard let fullRange = Range(match.range, in: text),
+                      let innerRange = Range(match.range(at: 1), in: text) else { continue }
+                let token = String(text[innerRange])
+                text.replaceSubrange(fullRange, with: formatSnakeCase(token))
+            }
+        }
+        return text
+    }
+
+    private func handleActionError(_ data: Data) {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+        let command = json["command"] as? String ?? "unknown"
+        let message = json["message"] as? String ?? "Unknown error"
+        let code = json["code"] as? String
+        // Strip the "code: " prefix from message if present (e.g. "docked: Cannot jettison...")
+        let cleanMessage: String
+        if let code, message.hasPrefix("\(code): ") {
+            cleanMessage = String(message.dropFirst(code.count + 2))
+        } else {
+            cleanMessage = message
+        }
+        appendEvent(
+            category: .system,
+            title: "\(formatSnakeCase(command)) failed",
+            detail: cleanMessage,
+            rawType: "action_error:\(command)"
+        )
     }
 
     private func handleError(_ data: Data) {
