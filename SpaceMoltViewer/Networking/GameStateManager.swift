@@ -417,7 +417,89 @@ class GameStateManager {
     private func handleActionResult(_ data: Data) {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
         let command = json["command"] as? String ?? "unknown"
-        appendEvent(category: .system, title: "Action: \(command)", detail: nil, rawType: "action_result:\(command)")
+        let result = json["result"] as? [String: Any] ?? [:]
+
+        let category: GameEventCategory = switch command {
+        case "analyze_market", "sell", "buy", "list_order", "cancel_order":
+            .trade
+        case "mine", "deep_core_mine":
+            .mining
+        case "scan":
+            .scan
+        case "attack", "flee":
+            .pirate
+        default:
+            .system
+        }
+
+        let (title, detail) = actionResultDescription(command: command, result: result)
+        appendEvent(category: category, title: title, detail: detail, rawType: "action_result:\(command)")
+    }
+
+    private func actionResultDescription(command: String, result: [String: Any]) -> (title: String, detail: String?) {
+        var details: [String] = []
+
+        // Command-specific extraction
+        switch command {
+        case "analyze_market":
+            if let analysis = result["analysis"] as? [String: Any] {
+                let items = analysis.values.compactMap { entry -> String? in
+                    guard let item = entry as? [String: Any],
+                          let name = item["item_name"] as? String else { return nil }
+                    if let stations = item["stations"] as? [[String: Any]], let station = stations.first {
+                        let buy = station["npc_buy_price"] as? Int
+                        let sell = station["npc_sell_price"] as? Int
+                        var prices: [String] = []
+                        if let buy { prices.append("buy \(buy)cr") }
+                        if let sell { prices.append("sell \(sell)cr") }
+                        return prices.isEmpty ? name : "\(name) (\(prices.joined(separator: "/")))"
+                    }
+                    return name
+                }
+                if !items.isEmpty { details.append(items.joined(separator: ", ")) }
+            }
+            if let range = result["scanning_range"] as? String {
+                details.append("Range: \(range)")
+            }
+            if let totalItems = result["total_items"] as? Int {
+                details.append("\(totalItems) item\(totalItems == 1 ? "" : "s") found")
+            }
+
+        default:
+            // Generic: pull out any "message" or "description" string
+            if let message = result["message"] as? String {
+                details.append(message)
+            }
+            if let description = result["description"] as? String {
+                details.append(description)
+            }
+            // Show quantity/amount/credits if present
+            if let credits = result["credits"] as? Int {
+                details.append("\(credits) credits")
+            }
+            if let quantity = result["quantity"] as? Int {
+                details.append("x\(quantity)")
+            }
+            if let amount = result["amount"] as? Int {
+                details.append("x\(amount)")
+            }
+            if let itemName = result["item_name"] as? String {
+                details.append(itemName)
+            }
+        }
+
+        // XP gained (common across all action_results)
+        if let xpGained = result["xp_gained"] as? [String: Any], !xpGained.isEmpty {
+            let xpParts = xpGained.compactMap { key, value -> String? in
+                guard let xp = value as? Int else { return nil }
+                let skill = key.replacingOccurrences(of: "_", with: " ").capitalized
+                return "+\(xp) \(skill) XP"
+            }
+            if !xpParts.isEmpty { details.append(xpParts.joined(separator: ", ")) }
+        }
+
+        let title = command.replacingOccurrences(of: "_", with: " ").capitalized
+        return (title, details.isEmpty ? nil : details.joined(separator: " | "))
     }
 
     private func handleError(_ data: Data) {
