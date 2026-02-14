@@ -241,8 +241,9 @@ class GameStateManager {
             chatMessages = ChatHistoryResponse(messages: [chatMsg], hasMore: false)
         }
 
+        let eventCategory: GameEventCategory = chatMsg.isSystemBroadcast ? .broadcast : .info
         appendEvent(
-            category: .info,
+            category: eventCategory,
             title: "[\(chatMsg.channel)] \(chatMsg.senderName)",
             detail: formatChatContent(chatMsg.content),
             rawType: "chat_message"
@@ -458,13 +459,23 @@ class GameStateManager {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
         let command = json["command"] as? String ?? "unknown"
         let result = json["result"] as? [String: Any] ?? [:]
+
+        // Log all action_result payloads for debugging event formatting
+        let resultKeys = result.keys.sorted().joined(separator: ", ")
+        SMLog.websocket.info("action_result [\(command)] keys: [\(resultKeys)]")
+        if let resultData = try? JSONSerialization.data(withJSONObject: result, options: [.sortedKeys]),
+           let resultStr = String(data: resultData.prefix(1000), encoding: .utf8) {
+            SMLog.websocket.debug("action_result [\(command)] payload: \(resultStr)")
+        }
+
         if result.isEmpty {
             let preview = String(data: data.prefix(500), encoding: .utf8) ?? "(non-UTF8)"
             SMLog.websocket.warning("action_result: empty result dict, raw=\(preview)")
         }
 
         let category: GameEventCategory = switch command {
-        case "analyze_market", "sell", "buy", "list_order", "cancel_order":
+        case "analyze_market", "sell", "buy", "list_order", "cancel_order",
+             "create_buy_order", "create_sell_order":
             .trade
         case "mine", "deep_core_mine":
             .mining
@@ -472,6 +483,10 @@ class GameStateManager {
             .scan
         case "attack", "flee":
             .pirate
+        case "withdraw_items", "deposit_items", "view_storage":
+            .base
+        case "travel", "dock", "undock":
+            .navigation
         default:
             .system
         }
@@ -517,17 +532,50 @@ class GameStateManager {
             if let range = result["scanning_range"] as? String { details.append("Scan range: \(range)") }
 
         default:
-            if let message = result["message"] as? String { details.append(formatChatContent(message)) }
-            if let description = result["description"] as? String, description != result["message"] as? String {
+            let message = result["message"] as? String
+            let hasMessage = message != nil
+
+            if let message { details.append(formatChatContent(message)) }
+            if let description = result["description"] as? String, description != message {
                 details.append(formatChatContent(description))
             }
-            if let itemName = result["item_name"] as? String { details.append(itemName) }
-            if let quantity = (result["quantity"] as? NSNumber)?.intValue { details.append("x\(quantity)") }
-            if let amount = (result["amount"] as? NSNumber)?.intValue { details.append("x\(amount)") }
+
+            // Items array (withdraw_items, deposit_items, etc.)
+            if let items = result["items"] as? [[String: Any]], !items.isEmpty {
+                for item in items {
+                    let name = item["item_name"] as? String
+                        ?? item["name"] as? String
+                        ?? "Unknown item"
+                    let qty = (item["quantity"] as? NSNumber)?.intValue
+                        ?? (item["amount"] as? NSNumber)?.intValue
+                    let formatted = formatSnakeCase(name)
+                    if let qty { details.append("\(qty)x \(formatted)") }
+                    else { details.append(formatted) }
+                }
+            }
+
+            // Single item_name + quantity (only if no message already describes it)
+            let itemName = result["item_name"] as? String
+            let quantity = (result["quantity"] as? NSNumber)?.intValue
+            let amount = (result["amount"] as? NSNumber)?.intValue
+            if let itemName {
+                let formatted = formatSnakeCase(itemName)
+                let qty = quantity ?? amount
+                if let qty, !hasMessage {
+                    details.append("\(qty)x \(formatted)")
+                } else if !hasMessage {
+                    details.append(formatted)
+                }
+            } else if !hasMessage {
+                // Bare quantity/amount only if there's no message context
+                if let quantity { details.append("x\(quantity)") }
+                if let amount { details.append("x\(amount)") }
+            }
+
             if let credits = (result["credits"] as? NSNumber)?.intValue { details.append("\(credits) credits") }
             if let location = result["location"] as? String { details.append(location) }
             if let target = result["target"] as? String { details.append(target) }
-            if let status = result["status"] as? String { details.append(status) }
+            if let status = result["status"] as? String, !hasMessage { details.append(status) }
         }
 
         // XP gained (common across all action_results)

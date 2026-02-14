@@ -18,6 +18,10 @@ struct ChatMessage: Decodable, Sendable, Identifiable {
     let content: String
     let timestamp: String
 
+    var isSystemBroadcast: Bool {
+        senderName.lowercased() == "[system]" || senderId.isEmpty && channel == "system"
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, channel, content
         case senderId = "sender_id"

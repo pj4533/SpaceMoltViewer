@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 enum GameEventCategory: String, Sendable {
-    case tick, combat, mining, navigation, skill, trade, pirate, police, drone, scan, base, system, info
+    case tick, combat, mining, navigation, skill, trade, pirate, police, drone, scan, base, system, info, broadcast
 
     var emoji: String {
         switch self {
@@ -19,6 +19,7 @@ enum GameEventCategory: String, Sendable {
         case .base: return "+"
         case .system: return "-"
         case .info: return "i"
+        case .broadcast: return "!"
         }
     }
 
@@ -36,6 +37,7 @@ enum GameEventCategory: String, Sendable {
         case .base: return .brown
         case .system, .tick: return .gray
         case .info: return .secondary
+        case .broadcast: return .yellow
         }
     }
 }

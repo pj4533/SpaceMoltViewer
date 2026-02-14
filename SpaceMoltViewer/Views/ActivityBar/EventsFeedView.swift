@@ -66,6 +66,41 @@ private struct EventRow: View {
     }()
 
     var body: some View {
+        if event.category == .broadcast {
+            broadcastRow
+        } else {
+            standardRow
+        }
+    }
+
+    private var broadcastRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Image(systemName: "megaphone.fill")
+                    .font(.caption)
+                    .foregroundStyle(.yellow)
+                Text("SYSTEM BROADCAST")
+                    .font(.caption.bold())
+                    .foregroundStyle(.yellow)
+                Spacer()
+                Text(Self.timeFormatter.string(from: event.timestamp))
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+
+            if let detail = event.detail {
+                Text(detail)
+                    .font(.callout)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(.yellow.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+    }
+
+    private var standardRow: some View {
         HStack(alignment: .top, spacing: 6) {
             Text(Self.timeFormatter.string(from: event.timestamp))
                 .font(.caption2.monospacedDigit())
