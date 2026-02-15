@@ -159,6 +159,8 @@ class GameStateManager {
             handlePirateCombat(message.payloadData)
         case "pirate_destroyed":
             handlePirateDestroyed(message.payloadData)
+        case "scan_detected":
+            handleScanDetected(message.payloadData)
         case "ok":
             handleOkEvent(message.payloadData)
         case "action_result":
@@ -179,8 +181,13 @@ class GameStateManager {
     }
 
     private func handleStateUpdate(_ data: Data) {
-        guard let update = ResilientDecoder.decodeOrNil(StateUpdatePayload.self, from: data) else {
-            SMLog.decode.error("Failed to decode state_update")
+        let update: StateUpdatePayload
+        do {
+            update = try ResilientDecoder.decode(StateUpdatePayload.self, from: data)
+        } catch {
+            let preview = String(data: data.prefix(500), encoding: .utf8) ?? "(non-UTF8)"
+            SMLog.decode.error("Failed to decode state_update: \(error)")
+            SMLog.decode.debug("state_update raw (\(data.count) bytes): \(preview)")
             return
         }
 
@@ -389,6 +396,15 @@ class GameStateManager {
         }
     }
 
+    private func handleScanDetected(_ data: Data) {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+        let scanner = json["scanner_username"] as? String ?? "Unknown"
+        let shipClass = json["scanner_ship_class"] as? String
+        let message = json["message"] as? String
+        let title = "Scanned by \(scanner)\(shipClass.map { " (\(formatSnakeCase($0)))" } ?? "")"
+        appendEvent(category: .scan, title: title, detail: message, rawType: "scan_detected")
+    }
+
     private func handleOkEvent(_ data: Data) {
         guard let payload = ResilientDecoder.decodeOrNil(OkActionPayload.self, from: data) else { return }
 
@@ -517,11 +533,11 @@ class GameStateManager {
                         var parts: [String] = []
                         if let bb = bestBuy {
                             let depthStr = buyDepth.map { " (\($0) wanted)" } ?? ""
-                            parts.append("sell \(bb)cr\(depthStr)")
+                            parts.append("sell for \(bb)cr\(depthStr)")
                         }
                         if let bs = bestSell {
                             let depthStr = sellDepth.map { " (\($0) avail)" } ?? ""
-                            parts.append("buy \(bs)cr\(depthStr)")
+                            parts.append("buy for \(bs)cr\(depthStr)")
                         }
                         if parts.isEmpty {
                             details.append("  \(systemName): no player orders")
@@ -776,7 +792,9 @@ class GameStateManager {
             chatMessages = try await gameAPI.getChatHistory(channel: channel)
             SMLog.api.debug("Chat refreshed: \(self.chatMessages?.messages.count ?? 0) messages")
         } catch {
-            SMLog.api.error("Failed to refresh chat: \(error.localizedDescription)")
+            // Expected error when player has no faction — show empty channel, don't log as error
+            chatMessages = ChatHistoryResponse(messages: [], hasMore: false)
+            SMLog.api.debug("Chat channel '\(channel)' unavailable: \(error.localizedDescription)")
         }
     }
 
