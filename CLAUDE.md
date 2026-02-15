@@ -121,6 +121,7 @@ WebSocket-specific models in `Models/WebSocketPayloads.swift` (WelcomePayload, S
 - **Progressive disclosure**: Compact widgets in left panel are tappable -> sets `inspectorFocus` -> right panel shows detail. No popovers, no sheets, no navigation stacks. One consistent pattern.
 - **Logging**: Use `SMLog.<category>` throughout. Available categories defined in `Services/Logger.swift`.
 - **Bundle ID**: `com.saygoodnight.SpaceMoltViewer`
+- **Market data**: The `analyze_market` payload includes `npc_buy_price`, `npc_sell_price`, and `base_price` fields — **ignore these**. The game uses a dynamic player-driven market system, so only `best_player_buy`/`best_player_sell` and their depths are relevant.
 
 ## API Reference
 
