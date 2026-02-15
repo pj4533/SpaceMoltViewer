@@ -501,35 +501,36 @@ class GameStateManager {
 
         switch command {
         case "analyze_market":
+            if let range = result["scanning_range"] as? String { details.append(range) }
             if let analysis = result["analysis"] as? [String: Any] {
                 for (itemKey, value) in analysis {
                     guard let item = value as? [String: Any] else { continue }
                     let name = item["item_name"] as? String ?? formatSnakeCase(itemKey)
                     details.append(name)
-                    guard let stations = item["stations"] as? [Any],
-                          let station = stations.first as? [String: Any] else { continue }
-                    if let baseName = station["base_name"] as? String {
-                        details.append("Station: \(baseName)")
-                    }
-                    let bestBuy = (station["best_player_buy"] as? NSNumber)?.intValue
-                    let buyDepth = (station["player_buy_depth"] as? NSNumber)?.intValue
-                    if let bb = bestBuy {
-                        let depthStr = buyDepth.map { " (\($0) wanted)" } ?? ""
-                        details.append("Sell for: \(bb)cr\(depthStr)")
-                    } else {
-                        details.append("Sell for: no buyers")
-                    }
-                    let bestSell = (station["best_player_sell"] as? NSNumber)?.intValue
-                    let sellDepth = (station["player_sell_depth"] as? NSNumber)?.intValue
-                    if let bs = bestSell {
-                        let depthStr = sellDepth.map { " (\($0) available)" } ?? ""
-                        details.append("Buy for: \(bs)cr\(depthStr)")
-                    } else {
-                        details.append("Buy for: no sellers")
+                    guard let stations = item["stations"] as? [[String: Any]] else { continue }
+                    for station in stations {
+                        let systemName = station["system_name"] as? String ?? station["base_name"] as? String ?? "Unknown"
+                        let bestBuy = (station["best_player_buy"] as? NSNumber)?.intValue
+                        let buyDepth = (station["player_buy_depth"] as? NSNumber)?.intValue
+                        let bestSell = (station["best_player_sell"] as? NSNumber)?.intValue
+                        let sellDepth = (station["player_sell_depth"] as? NSNumber)?.intValue
+                        var parts: [String] = []
+                        if let bb = bestBuy {
+                            let depthStr = buyDepth.map { " (\($0) wanted)" } ?? ""
+                            parts.append("sell \(bb)cr\(depthStr)")
+                        }
+                        if let bs = bestSell {
+                            let depthStr = sellDepth.map { " (\($0) avail)" } ?? ""
+                            parts.append("buy \(bs)cr\(depthStr)")
+                        }
+                        if parts.isEmpty {
+                            details.append("  \(systemName): no player orders")
+                        } else {
+                            details.append("  \(systemName): \(parts.joined(separator: " / "))")
+                        }
                     }
                 }
             }
-            if let range = result["scanning_range"] as? String { details.append("Scan range: \(range)") }
 
         default:
             let message = result["message"] as? String
