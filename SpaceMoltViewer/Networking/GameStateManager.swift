@@ -293,7 +293,10 @@ class GameStateManager {
         let resource = formatSnakeCase(payload.resourceId ?? "unknown")
         let qty = payload.quantity ?? 0
         appendEvent(category: .mining, title: "Mined \(qty)x \(resource)", detail: payload.remaining.map { "Remaining: \($0)" }, rawType: "mining_yield")
-        Task { await refreshCargo() }
+        Task {
+            await refreshCargo()
+            await refreshCurrentPoi()
+        }
     }
 
     private func handleSkillLevelUp(_ data: Data) {
@@ -548,7 +551,10 @@ class GameStateManager {
                 await refreshStorage()
             }
         case "mine", "deep_core_mine":
-            Task { await refreshCargo() }
+            Task {
+                await refreshCargo()
+                await refreshCurrentPoi()
+            }
         case "dock":
             Task { await refreshStorage() }
         default:
@@ -790,6 +796,21 @@ class GameStateManager {
             }
         } catch {
             SMLog.api.debug("Failed to fetch current POI resources: \(error.localizedDescription)")
+        }
+    }
+
+    /// Refresh resource data for just the current POI (e.g. after mining changes richness)
+    private func refreshCurrentPoi() async {
+        guard let currentPoiId = playerStatus?.player.currentPoi, !currentPoiId.isEmpty else { return }
+        do {
+            let detail = try await gameAPI.getPoi(id: currentPoiId)
+            if let resources = detail.resources, !resources.isEmpty {
+                poiResources[currentPoiId] = resources
+            } else {
+                poiResources.removeValue(forKey: currentPoiId)
+            }
+        } catch {
+            SMLog.api.debug("Failed to refresh current POI: \(error.localizedDescription)")
         }
     }
 

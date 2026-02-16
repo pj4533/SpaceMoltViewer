@@ -51,12 +51,19 @@ struct Position: Decodable, Sendable {
 struct PoiResource: Decodable, Sendable, Identifiable {
     let resourceId: String
     let richness: Int
+    let remaining: Int?
 
     var id: String { resourceId }
 
+    /// Whether this resource has a finite supply (-1 or nil = infinite)
+    var isFinite: Bool {
+        guard let remaining else { return false }
+        return remaining >= 0
+    }
+
     enum CodingKeys: String, CodingKey {
         case resourceId = "resource_id"
-        case richness
+        case richness, remaining
     }
 }
 

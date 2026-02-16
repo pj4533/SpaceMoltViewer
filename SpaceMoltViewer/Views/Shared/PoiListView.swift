@@ -24,20 +24,31 @@ struct PoiListView: View {
                 let resources = poi.resources ?? poiResources[poi.id]
                 if let resources, !resources.isEmpty {
                     ForEach(resources) { resource in
-                        HStack(spacing: 4) {
-                            Image(systemName: "cube.fill")
-                                .font(.system(size: 8))
-                                .foregroundStyle(.orange)
-                            Text(resource.resourceId.displayFormatted)
-                                .font(.caption2)
-                            Spacer()
-                            ProgressView(value: Double(resource.richness), total: 100)
-                                .frame(width: 40)
-                                .tint(richnessColor(resource.richness))
-                            Text("\(resource.richness)%")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .frame(width: 28, alignment: .trailing)
+                        VStack(spacing: 1) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "cube.fill")
+                                    .font(.system(size: 8))
+                                    .foregroundStyle(.orange)
+                                Text(resource.resourceId.displayFormatted)
+                                    .font(.caption2)
+                                Spacer()
+                                ProgressView(value: Double(resource.richness), total: 100)
+                                    .frame(width: 40)
+                                    .tint(richnessColor(resource.richness))
+                                Text("\(resource.richness)%")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 28, alignment: .trailing)
+                            }
+                            if resource.isFinite, let remaining = resource.remaining {
+                                HStack(spacing: 4) {
+                                    Text("\(remaining) remaining")
+                                        .font(.caption2)
+                                        .foregroundStyle(remaining > 0 ? .orange : .red)
+                                    Spacer()
+                                }
+                                .padding(.leading, 16)
+                            }
                         }
                         .padding(.leading, 20)
                     }
