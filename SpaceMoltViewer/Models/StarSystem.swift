@@ -2,12 +2,27 @@ import Foundation
 
 struct SystemResponse: Decodable, Sendable {
     let system: StarSystem
-    let pois: [PointOfInterest]
     let securityStatus: String
 
+    /// POIs are now inside the system object
+    var pois: [PointOfInterest] { system.pois }
+
     enum CodingKeys: String, CodingKey {
-        case system, pois
+        case system
         case securityStatus = "security_status"
+    }
+}
+
+struct SystemConnection: Decodable, Sendable, Identifiable {
+    let systemId: String
+    let name: String
+    let distance: Int
+
+    var id: String { systemId }
+
+    enum CodingKeys: String, CodingKey {
+        case systemId = "system_id"
+        case name, distance
     }
 }
 
@@ -15,14 +30,16 @@ struct StarSystem: Decodable, Sendable {
     let id: String
     let name: String
     let description: String
-    let policeLevel: Int
-    let connections: [String]
-    let pois: [String]
-    let position: Position
+    let policeLevel: Int?
+    let empire: String?
+    let securityStatus: String?
+    let connections: [SystemConnection]
+    let pois: [PointOfInterest]
 
     enum CodingKeys: String, CodingKey {
-        case id, name, description, connections, pois, position
+        case id, name, description, connections, pois, empire
         case policeLevel = "police_level"
+        case securityStatus = "security_status"
     }
 }
 
@@ -45,12 +62,16 @@ struct PoiResource: Decodable, Sendable, Identifiable {
 
 struct PointOfInterest: Decodable, Sendable, Identifiable {
     let id: String
-    let systemId: String
+    let systemId: String?
     let type: String
     let name: String
     let description: String?
     let position: Position?
     let resources: [PoiResource]?
+    let hasBase: Bool?
+    let baseId: String?
+    let baseName: String?
+    let online: Int?
 
     var poiIcon: String {
         switch type {
@@ -76,8 +97,11 @@ struct PointOfInterest: Decodable, Sendable, Identifiable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, type, name, description, position, resources
+        case id, type, name, description, position, resources, online
         case systemId = "system_id"
+        case hasBase = "has_base"
+        case baseId = "base_id"
+        case baseName = "base_name"
     }
 }
 

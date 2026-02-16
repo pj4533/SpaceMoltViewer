@@ -31,9 +31,16 @@ struct InspectorEmptyView: View {
                         Text("CONNECTIONS")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                        Text("\(system.system.connections.count) connected systems")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        ForEach(system.system.connections) { conn in
+                            HStack {
+                                Text(conn.name)
+                                    .font(.caption)
+                                Spacer()
+                                Text("\(conn.distance) ly")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
                 .padding(12)

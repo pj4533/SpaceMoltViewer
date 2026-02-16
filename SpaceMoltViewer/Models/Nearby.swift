@@ -15,7 +15,7 @@ struct NearbyResponse: Decodable, Sendable {
 }
 
 struct NearbyPlayer: Decodable, Sendable, Identifiable {
-    let playerId: String
+    let playerId: String?
     let anonymous: Bool
     let inCombat: Bool?
     let username: String?
@@ -25,7 +25,7 @@ struct NearbyPlayer: Decodable, Sendable, Identifiable {
     let primaryColor: String?
     let secondaryColor: String?
 
-    var id: String { playerId }
+    var id: String { playerId ?? username ?? "anon-\(shipClass ?? "unknown")" }
 
     var displayName: String {
         if anonymous { return "Anonymous" }
