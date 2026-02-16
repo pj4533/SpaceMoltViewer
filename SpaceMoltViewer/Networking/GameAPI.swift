@@ -32,7 +32,7 @@ struct GameAPI {
 
     let sessionManager: SessionManager
 
-    private func call<T: Decodable>(tool: String, extraArgs: [String: Any] = [:]) async throws -> T {
+    private func call<T: Decodable>(tool: String, extraArgs: [String: Any] = [:], isRetry: Bool = false) async throws -> T {
         guard Self.allowedTools.contains(tool) else {
             SMLog.api.fault("BLOCKED: attempted call to disallowed tool '\(tool)'")
             throw GameAPIError.disallowedTool(tool)
@@ -47,11 +47,22 @@ struct GameAPI {
         args["session_id"] = gameSessionId
 
         SMLog.api.debug("Calling \(tool)")
-        let data = try await MCPClient.callTool(
-            name: tool,
-            arguments: args,
-            mcpSessionId: mcpSessionId
-        )
+        let data: Data
+        do {
+            data = try await MCPClient.callTool(
+                name: tool,
+                arguments: args,
+                mcpSessionId: mcpSessionId
+            )
+        } catch let error as MCPError {
+            // Detect MCP session expiry (-32600) and re-initialize once
+            if case .serverError(let code, _) = error, code == -32600, !isRetry {
+                SMLog.api.warning("MCP session expired during \(tool), re-initializing...")
+                try await sessionManager.ensureMCPSession()
+                return try await call(tool: tool, extraArgs: extraArgs, isRetry: true)
+            }
+            throw error
+        }
 
         do {
             let result = try ResilientDecoder.decode(T.self, from: data)

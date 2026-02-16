@@ -40,6 +40,9 @@ class SessionManager {
     private var savedUsername: String?
     private var savedPassword: String?
 
+    // Prevents multiple concurrent MCP re-initializations
+    private var mcpReinitTask: Task<Void, Error>?
+
     var isConnected: Bool { connectionState.isConnected }
 
     func connect(username: String, password: String) async {
@@ -128,6 +131,30 @@ class SessionManager {
         } catch {
             SMLog.auth.error("Failed to re-initialize MCP session: \(error.localizedDescription)")
         }
+    }
+
+    /// Re-initialize the MCP session (e.g. after session expiry error -32600).
+    /// Coalesces concurrent calls so only one re-init runs at a time.
+    func ensureMCPSession() async throws {
+        if let existing = mcpReinitTask {
+            // Another re-init is already in progress — wait for it
+            try await existing.value
+            return
+        }
+
+        let task = Task {
+            defer { mcpReinitTask = nil }
+
+            guard let username = savedUsername, let password = savedPassword else {
+                throw GameAPIError.notConnected
+            }
+
+            SMLog.auth.info("MCP session expired, re-initializing...")
+            try await connectMCP(username: username, password: password)
+            SMLog.auth.info("MCP session re-initialized after expiry")
+        }
+        mcpReinitTask = task
+        try await task.value
     }
 
     func disconnect() async {
