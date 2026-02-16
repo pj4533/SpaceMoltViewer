@@ -34,7 +34,7 @@ struct LocationCompact: View {
                     }
 
                     if !player.currentPoi.isEmpty {
-                        Text(player.currentPoi.displayFormatted)
+                        Text(poiDisplayName)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -44,6 +44,15 @@ struct LocationCompact: View {
             .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
+    }
+
+    private var poiDisplayName: String {
+        // Look up friendly name from system POI list
+        if let pois = system?.pois,
+           let poi = pois.first(where: { $0.id == player.currentPoi }) {
+            return poi.name
+        }
+        return player.currentPoi.displayFormatted
     }
 
     private func securityLabel(_ status: String) -> String {

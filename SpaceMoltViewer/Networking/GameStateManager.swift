@@ -39,6 +39,7 @@ class GameStateManager {
     private var mapTask: Task<Void, Never>?
     private var initialLoadTask: Task<Void, Never>?
     private var previousSystem: String?
+    private var previousPoi: String?
     private static let maxEvents = 200
 
     // Throttling: track last refresh time per query type
@@ -204,12 +205,26 @@ class GameStateManager {
         if previousSystem != nil && previousSystem != newSystem {
             SMLog.websocket.info("System changed: \(self.previousSystem ?? "?") -> \(newSystem)")
             appendEvent(category: .navigation, title: "Entered \(newSystem)", detail: nil, rawType: "system_change")
+            // Clear stale data immediately so views fall back to player data while loading
+            system = nil
+            poiResources = [:]
             Task {
                 await refreshSystem()
                 await refreshNearby()
             }
         }
         previousSystem = newSystem
+
+        // Detect POI change → re-fetch resources for new current POI
+        let newPoi = update.player.currentPoi
+        if previousPoi != nil && previousPoi != newPoi {
+            SMLog.websocket.info("POI changed: \(self.previousPoi ?? "?") -> \(newPoi)")
+            if let pois = system?.pois {
+                Task { await fetchPoiResources(for: pois) }
+            }
+            Task { await refreshNearby() }
+        }
+        previousPoi = newPoi
 
         // Check docked status → trigger storage refresh
         if let docked = update.player.dockedAtBase, !docked.isEmpty {
@@ -754,30 +769,27 @@ class GameStateManager {
         // Clear previous resources
         poiResources = [:]
 
-        // Skip if POIs already have inline resources from get_system
-        let needsFetch = pois.filter { $0.canHaveResources && ($0.resources == nil || $0.resources!.isEmpty) }
-        let alreadyHave = pois.filter { $0.canHaveResources && $0.resources != nil && !$0.resources!.isEmpty }
-
-        // Store inline resources
-        for poi in alreadyHave {
-            poiResources[poi.id] = poi.resources
-        }
-
-        guard !needsFetch.isEmpty else {
-            SMLog.api.debug("All POI resources available inline, no get_poi calls needed")
-            return
-        }
-
-        SMLog.api.debug("Fetching resources for \(needsFetch.count) POIs via get_poi")
-        for poi in needsFetch {
-            do {
-                let detail = try await gameAPI.getPoi(id: poi.id)
-                if let resources = detail.resources, !resources.isEmpty {
-                    poiResources[poi.id] = resources
-                }
-            } catch {
-                SMLog.api.debug("Failed to fetch POI \(poi.id) resources: \(error.localizedDescription)")
+        // Store any inline resources from get_system
+        for poi in pois where poi.canHaveResources {
+            if let resources = poi.resources, !resources.isEmpty {
+                poiResources[poi.id] = resources
             }
+        }
+
+        // get_poi only returns the current POI regardless of poi_id param,
+        // so just call it once and store resources under the current POI's ID
+        guard let currentPoiId = playerStatus?.player.currentPoi, !currentPoiId.isEmpty else { return }
+        guard pois.contains(where: { $0.id == currentPoiId && $0.canHaveResources }) else { return }
+        guard poiResources[currentPoiId] == nil else { return }
+
+        do {
+            let detail = try await gameAPI.getPoi(id: currentPoiId)
+            if let resources = detail.resources, !resources.isEmpty {
+                poiResources[currentPoiId] = resources
+                SMLog.api.debug("Fetched resources for current POI \(currentPoiId)")
+            }
+        } catch {
+            SMLog.api.debug("Failed to fetch current POI resources: \(error.localizedDescription)")
         }
     }
 
