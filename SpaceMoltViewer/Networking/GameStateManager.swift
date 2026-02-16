@@ -550,6 +550,8 @@ class GameStateManager {
                 await refreshCargo()
                 await refreshStorage()
             }
+        case "jettison":
+            Task { await refreshCargo() }
         case "mine", "deep_core_mine":
             Task {
                 await refreshCargo()
