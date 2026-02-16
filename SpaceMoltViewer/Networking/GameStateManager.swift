@@ -453,7 +453,11 @@ class GameStateManager {
             }
         case "craft":
             appendEvent(category: .trade, title: "Crafted item", detail: payload.message, rawType: "ok:craft")
-            Task { await refreshCargo() }
+            Task {
+                await refreshCargo()
+                await refreshStorage()
+                await refreshSkills(force: true)
+            }
         case "refuel":
             appendEvent(category: .base, title: "Refueled", detail: payload.message, rawType: "ok:refuel")
         case "repair":
@@ -509,6 +513,32 @@ class GameStateManager {
 
         let (title, detail) = actionResultDescription(command: command, result: result)
         appendEvent(category: category, title: title, detail: detail, rawType: "action_result:\(command)")
+
+        // Trigger data refreshes based on command
+        switch command {
+        case "craft":
+            Task {
+                await refreshCargo()
+                await refreshStorage()
+                await refreshSkills(force: true)
+            }
+        case "sell", "buy", "buy_listing":
+            Task {
+                await refreshCargo()
+                await refreshStorage()
+            }
+        case "deposit_items", "withdraw_items", "deposit_credits", "withdraw_credits":
+            Task {
+                await refreshCargo()
+                await refreshStorage()
+            }
+        case "mine", "deep_core_mine":
+            Task { await refreshCargo() }
+        case "dock":
+            Task { await refreshStorage() }
+        default:
+            break
+        }
     }
 
     // swiftlint:disable:next cyclomatic_complexity function_body_length
